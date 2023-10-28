@@ -23,23 +23,23 @@ empresas = {
 
     "AAPL":           [ "6408", "apple-computer-inc" ],
     "ENELCHILE":      [ "976489", "enersis-chile-sa" ],
+    "ENELAM":         [ "41445", "enersis" ],
     "SMU":            [ "1055339", "smu" ],
     "MASISA":         [ "41468", "masisa" ],
-    "HABITAT":        [ "41452", "a.f.p.-habitat" ],                       #interesante
+    "HABITAT":        [ "41452", "a.f.p.-habitat" ],                       
     "ILC":            [ "41458", "inv-la-constru" ],
-    "AAISA":          [ "1193024", "administradora-americana-de-invers" ], # poco volumen (es fácil mover el precio)
-    "CONCHATORO":     [ "41427", "vina-concha-to" ],                       # interesante
-    "SOQUICOM":       [ "41485", "soquicom" ],                             # interesante
-    "CCU":            [ "41417", "cervecerias-un" ],                       # interesante (2.9 dividend yield)
-
-  
+    "AAISA":          [ "1193024", "administradora-americana-de-invers" ], 
+    "CONCHATORO":     [ "41427", "vina-concha-to" ],                       
+    "SOQUICOM":       [ "41485", "soquicom" ],                             
+    "CCU":            [ "41417", "cervecerias-un" ],                       
+    "CLOROX":         [ "7933", "clorox-co" ], 
     "EMBONORB":       [ "41443", "embonor-b"],
     "LIPIGAS":        [ "996053", "empresas-lipigas-sa"],
     "NUEVAPOLAR":     [ "41462", "nuevapolar" ],
     "QUINENCO":       [ "41481", "quinenco" ],
     "PROVIDA":        [ "41480", "a.f.p.-provida" ],
     "ZOFRI":          [ "41500", "zofri" ], 
-    "ANDINA-A":       [ "41403", "emb-andina-a" ], #interesante (9.7% dividend yield)
+    "ANDINA-A":       [ "41403", "emb-andina-a" ], 
     "AESANDES":       [ "41407", "aesgener" ],
     "AGUASA":         [ "41402", "aguas-andinas" ],
     "BANCOCHILE":     [ "41422", "banco-de-chile-(sn)" ],
@@ -49,6 +49,16 @@ empresas = {
     "CENCOSHOPP":     [ "1152242", "cencosud-shopping-sa" ],
     "COLBUN":         [ "41432", "colbun" ],
     "ANDINA-B":       [ "41404", "emb-andina-b" ],
+    "BSANTANDER":     [ "41493", "santander-chil" ],
+    "CMPC":           [ "41416", "cmpc" ],
+    "COPEC":          [ "41434", "empresas-copec" ],
+    "FALABELLA":      [ "41449", "falabella" ],
+    "IAM":            [ "41455", "iam-sa" ],
+    "OROBLANCO":      [ "41471", "oro-blanco" ],
+    "RIPLEY":         [ "41482", "ripley-corp" ],
+    "SECURITY":       [ "41487", "grupo-security" ],
+    "SONDA":          [ "41489", "sonda" ],
+    "SQM-B":          [ "41491", "soquimich-b" ],
 
   } 
 
@@ -303,12 +313,7 @@ class Estados:
     #return all([val > 1 for val in totalTestAcido])
     mean = np.mean(totalTestAcido)
     print(mean)
-    if mean >= 1:
-      print(Fore.GREEN + 'Si')
-      print(Style.RESET_ALL)
-    else:
-      print(Fore.RED + 'No')
-      print(Style.RESET_ALL)
+    print_si() if mean >= 1 else print_no()
 
 
   def check_capital_trabajo(self):
@@ -432,6 +437,7 @@ class Estados:
       # print(str(i) + ':' + r.text)
       if 'Ratio Payout TTM' == r.text:
         index = i + 1
+        break
 
     result = convert(self.ratios[index])
     if result > 100.0:
@@ -446,6 +452,29 @@ class Estados:
     else:
       print('eps no debe ser cero')
       return 0
+
+  # Dividend Yield 5 Year Avg. 5YA
+  def dividend_yield(self):
+    index = 0
+    for i, r in enumerate(self.ratios):
+      # print(str(i) + ':' + r.text)
+      if 'Promedio de Rendimiento del Dividendo en 5 Años 5YA' == r.text:
+        index = i + 1
+        break
+
+    return convert(self.ratios[index])
+
+  # Dividend Growth Rate
+  def dividend_growth_rate(self):
+    index = 0
+    for i, r in enumerate(self.ratios):
+      # print(str(i) + ':' + r.text)
+      if 'Tasa de Crecimiento de los Dividendos ANN' == r.text:
+        index = i + 1
+        break
+
+    return convert(self.ratios[index])   
+
 
   # tipo de empresa por tasa de crecimiento
   def tipo_empresa(self):
@@ -500,6 +529,11 @@ class Estados:
     # print('valor BOLSA/LIBRO:' + ratios[index].text)
 
     return convert(self.ratios[index])
+
+  # tomando eps promedio de 5A
+  def earning_yield(self):
+    epsMean = np.mean(self.total_beneficio_por_accion())
+    return 100 * (epsMean /  self.precio_actual)
 
   # multiplo de per (g en %)
   def get_multiplo_per(self):
@@ -567,7 +601,7 @@ class Estados:
     return self.stock_name
 
 
-b = Estados('ZOFRI', 'Annual', 5)
+b = Estados('SQM-B', 'Annual', 5)
 
 # --------------------------------------------------------------------------------------------------------------------
 # a) Balance  (fotografía de la empresa)
@@ -589,7 +623,8 @@ print('nombre de la accion:')
 print(b.get_stock_name())
 print('')
 print('total activo circulante:')
-print(b.total_activo_circulante())
+totalActivoCirculante = b.total_activo_circulante()
+print(totalActivoCirculante)
 print('')
 print('total pasivo circulante:')
 print(b.total_pasivo_circulante())
@@ -635,6 +670,11 @@ razonCrecimientoActivos = razon_crecimiento(activosTotales)
 print(razonCrecimientoActivos)
 print('')
 
+print('razon crecimiento activos circulantes:')
+razonActivoCirculante = razon_crecimiento(totalActivoCirculante)
+print(razonActivoCirculante)
+print('')
+
 print('patrimonio neto:')
 patrimonioNeto = b.patrimonio_neto()
 print(patrimonioNeto)
@@ -650,7 +690,7 @@ acciones = b.acciones_circulando()
 print(acciones)
 print('')
 
-print('razon decrecimiento acciones:')
+print('razon crecimiento acciones:')
 razonAcciones = razon_crecimiento(acciones)
 print(razonAcciones)
 print('')
@@ -784,12 +824,12 @@ check_razon_creciente(razonBeneficioPorAccion)
 
 # 6) ROE > 15 %
 
-print('ROE %:')
+print('ROE (%):')
 
 b.get_ROE()
 print('')
 
-print('ROE ajustado %:')
+print('ROE ajustado (%):')
 
 roeAjustado = b.ROE_ajustado()
 print(roeAjustado)
@@ -813,7 +853,7 @@ print('')
 
 tasaReparto = b.get_tasa_reparto()
 
-print('tasa de reparto(%):')
+print('tasa de reparto (%):')
 print(tasaReparto)
 print('')
 
@@ -852,13 +892,13 @@ print('')
 
 tasaDividendo = b.get_tasa_dividendos() / 100
 
-print('tasa dividendos promedio (%):')
+print('tasa promedio últimos dividendos (%):')
 print(100 * tasaDividendo)
 print('')
 
 rentabilidad = b.rentabilidad_capital(0)
 
-print('rentabilidad %:')
+print('rentabilidad (%):')
 print(rentabilidad)
 print('')
 
@@ -882,13 +922,24 @@ print('valor libro ajustado:')
 print(b.valor_libro_ajustado())
 print('')
 
+print('Earnings yield (EPS/P) (%):')
+print(b.earning_yield())
+print('')
 
-# Valor libro ajustado (total patrimonio / total de acciones)
+print('Dividend yield (D/P) (%):')
+print(b.dividend_yield())
+print('')
+
+print('Dividend growth yield (%):')
+print(b.dividend_growth_rate())
+print('')
+
+# TODO:
+# -----
+#
 # FCF/Patrimonio
 # DPS/EPS (dividend per share / earning per share) 
 # (AC-Caja) / Ventas
-# Earnings yield (E/P) 
-# Dividend yield (D/P)
 # --------------------------------------------------------------------------------------------------------------------
 # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
 
