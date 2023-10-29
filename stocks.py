@@ -100,7 +100,7 @@ def get_annual_data(balances, a,b,c,d):
 def razon_crecimiento(arreglo):
   x = np.array([2022, 2021, 2020, 2019])
   y = np.array(arreglo)
-  return np.linalg.lstsq(np.vstack([x, np.ones(len(x))]).T, y, rcond=None)[0][0]
+  return round(np.linalg.lstsq(np.vstack([x, np.ones(len(x))]).T, y, rcond=None)[0][0], 2)
 
 
 def check_razon_creciente(razon):
@@ -149,7 +149,7 @@ class Estados:
   # cantidad de pesos que tiene la empresa, para pagar cada peso de deuda (corto plazo) , si se agrega el inventario -> test acido, usar en empresas que vendan productos!
   def razon_corriente(self, activo_circulante, pasivo_circulante, inventario=0):
     if pasivo_circulante > 0:
-      return (activo_circulante - inventario) / pasivo_circulante
+       return (activo_circulante - inventario) / pasivo_circulante
     else:
       print('pasivo circulante no debe ser 0')
       return 0
@@ -157,7 +157,7 @@ class Estados:
   # porcion de activos que estan financiados por terceros
   def razon_endeudamiento(self, pasivos_totales, activos_totales):
     if activos_totales != 0:
-      return (pasivos_totales / activos_totales)
+      return pasivos_totales / activos_totales
     else:
       print('activos totales no deben ser 0')
       return 0
@@ -221,6 +221,18 @@ class Estados:
   def total_inventario(self):
     return get_annual_data(self.balances,37,38,39,40)
 
+  def total_efectivo_e_inversiones(self):
+    total_arr = self.balances[5].text.splitlines()
+    total = []
+    for i, t in enumerate(total_arr):
+        if i in [14,15,16,17]:
+          if t == '-':
+            total.append(0) 
+          else:
+            tt = t.replace(",", ".").strip('%')
+            total.append(float(tt))
+
+    return total          
 
   def total_capital_trabajo(self):
     activo = self.total_activo_circulante()
@@ -240,7 +252,7 @@ class Estados:
     lista = []
 
     for i, a in enumerate(activo):
-      lista.append(self.razon_corriente(a, pasivo[i], inventario[i]))
+      lista.append(round(self.razon_corriente(a, pasivo[i], inventario[i]),2))
   
     return lista
 
@@ -251,7 +263,7 @@ class Estados:
     lista = []
   
     for i, a in enumerate(activo):
-      lista.append(self.razon_corriente(a, pasivo[i]))
+      lista.append(round(self.razon_corriente(a, pasivo[i]), 2))
       
     return lista
 
@@ -274,7 +286,7 @@ class Estados:
     lista = []
 
     for i, a  in enumerate(activo):
-      lista.append(self.razon_endeudamiento(pasivo[i], a))
+      lista.append(round(self.razon_endeudamiento(pasivo[i], a), 2))
       
     return lista
 
@@ -284,7 +296,7 @@ class Estados:
     lista = []
 
     for i, a  in enumerate(pasivo):
-      lista.append(self.razon_endeudamiento(a, patrimonio[i]))
+      lista.append(round(self.razon_endeudamiento(a, patrimonio[i]),2))
       
     return lista
 
@@ -304,7 +316,8 @@ class Estados:
     patrimonioNeto = self.patrimonio_neto()
     lista = []
     for i, a in enumerate(accionesCirculando):
-      lista.append(patrimonioNeto[i] / a) if a > 0 else lista.append(0)
+      resultado = patrimonioNeto[i] / a
+      lista.append(round(resultado,2)) if a > 0 else lista.append(0)
 
     return lista
 
@@ -312,28 +325,28 @@ class Estados:
     totalTestAcido = self.total_test_acido()
     #return all([val > 1 for val in totalTestAcido])
     mean = np.mean(totalTestAcido)
-    print(mean)
+    print(round(mean, 2))
     print_si() if mean >= 1 else print_no()
 
 
   def check_capital_trabajo(self):
     totalCapitalTrabajo = self.total_capital_trabajo()
     mean = np.mean(totalCapitalTrabajo)
-    print(mean)
+    print(round(mean, 2))
     print_si() if mean > 0 else print_no()
 
 
   def check_razon_corriente(self):
     totalRazonCorriente = self.total_razon_corriente()
     mean = np.mean(totalRazonCorriente)
-    print(mean)
+    print(round(mean, 2))
     print_si() if mean >= 1 else print_no()
 
 
   def check_razon_endeudamiento(self):
     totalRazonEndeudamiento = self.total_razon_endeudamiento()
     mean = np.mean(totalRazonEndeudamiento)
-    print(mean)
+    print(round(mean, 2))
     print_si() if mean <= 0.5 else print_no()
 
   # Actividad operacional
@@ -361,7 +374,7 @@ class Estados:
 
   def ROE_ajustado(self):
     if self.precio_valor_contable != 0:
-      return self.ROE / self.precio_valor_contable
+      return round(self.ROE / self.precio_valor_contable, 2)
     else:
       print('precio bolsa libro no debe ser 0')
 
@@ -384,6 +397,17 @@ class Estados:
       return soup.find_all('td')
     except:
       print("una excepcion ocurrio al intentar leer los ratios")
+
+  # (AC-Caja) / Ventas
+  def casanegra_ratio(self):
+    totalActivoCirculante = self.total_activo_circulante()
+    totalEfectivo = self.total_efectivo_e_inversiones()
+    costoVenta = self.total_costo_venta()
+    lista = []
+    for i, a in enumerate(costoVenta):
+        lista.append(round((totalActivoCirculante[i] - totalEfectivo[i]) / costoVenta[i], 2))
+
+    return lista
 
 
   def total_ingresos(self):
@@ -416,7 +440,7 @@ class Estados:
     lista = []
 
     for i, t in enumerate(totalIngresos):
-      lista.append(self.margen_bruto(t, costoVenta[i]))
+      lista.append(round(self.margen_bruto(t, costoVenta[i]), 2))
       
     return lista  
 
@@ -475,6 +499,23 @@ class Estados:
 
     return convert(self.ratios[index])   
 
+  # FCF/ Patrimonio (último año)
+  def fcf_patrimonio(self):
+    index = 0
+    for i, r in enumerate(self.ratios):
+      # print(str(i) + ':' + r.text)
+      if 'Precio/Flujo de caja libre TTM' == r.text:
+        index = i + 1
+        break
+
+    patrimonioNeto = self.patrimonio_neto()
+
+    patrimonio = 0
+    for p in patrimonioNeto:
+      if p != 0:
+        patrimonio = p
+        break
+    return round(convert(self.ratios[index]) / patrimonio, 2)
 
   # tipo de empresa por tasa de crecimiento
   def tipo_empresa(self):
@@ -490,7 +531,7 @@ class Estados:
 
   def set_tasa_crecimiento(self):
     # print('roe:' + str(roe) + ', tasa de reparto:' + str(tasa_reparto) )
-    return self.ROE * (1 - (self.tasa_reparto / 100)) 
+    return round(self.ROE * (1 - (self.tasa_reparto / 100)), 2)
 
 
   def set_eps_presente(self):
@@ -508,7 +549,7 @@ class Estados:
 
   # si son acciones con dividendos, se debe agregar la tasa de retorno por ella  (rentabilidad en %)
   def rentabilidad_capital(self, impuesto_dividendo):
-    return 100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n)) - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo))
+    return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n)) - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo)), 2)
 
 
   def check_valor_bolsa_libro(self):
@@ -533,7 +574,7 @@ class Estados:
   # tomando eps promedio de 5A
   def earning_yield(self):
     epsMean = np.mean(self.total_beneficio_por_accion())
-    return 100 * (epsMean /  self.precio_actual)
+    return round(100 * (epsMean /  self.precio_actual), 2)
 
   # multiplo de per (g en %)
   def get_multiplo_per(self):
@@ -570,11 +611,11 @@ class Estados:
 
 
   def get_precio_accion_futuro(self):
-    return self.precio_accion_futuro
+    return round(self.precio_accion_futuro, 2)
 
 
   def get_tasa_dividendos(self):
-    return self.tasa_dividendos
+    return round(self.tasa_dividendos, 2)
 
 
   def get_precio_valor_contable(self):
@@ -590,18 +631,18 @@ class Estados:
 
 
   def get_eps_futuro(self):
-    return self.eps_futuro
+    return round(self.eps_futuro,2)
 
 
   def get_per(self):
-    return self.per
+    return round(self.per, 2)
 
 
   def get_stock_name(self):
     return self.stock_name
 
 
-b = Estados('SQM-B', 'Annual', 5)
+b = Estados('QUINENCO', 'Annual', 5)
 
 # --------------------------------------------------------------------------------------------------------------------
 # a) Balance  (fotografía de la empresa)
@@ -934,12 +975,25 @@ print('Dividend growth yield (%):')
 print(b.dividend_growth_rate())
 print('')
 
+# FCF/Patrimonio (bueno: sobre 15-18%)
+print('FCF / Patrimonio (actualizado):')
+print(b.fcf_patrimonio())
+print('')
+print('(AC-Caja) / Ventas:')
+casanegra = b.casanegra_ratio()
+print(casanegra)
+print('')
+
+print('(AC-Caja) / Ventas constante o disminuyendo? :')
+razonCasanegra = razon_crecimiento(casanegra)
+print(razonCasanegra)
+check_razon_decreciente(razonCasanegra)
+
+
 # TODO:
 # -----
 #
-# FCF/Patrimonio
 # DPS/EPS (dividend per share / earning per share) 
-# (AC-Caja) / Ventas
 # --------------------------------------------------------------------------------------------------------------------
 # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
 
