@@ -637,6 +637,14 @@ class Estados:
   def get_per(self):
     return round(self.per, 2)
 
+  """
+    El valor del índice PEG de 1 representa una correlación perfecta entre el valor de mercado de la empresa y el crecimiento de sus ganancias proyectado.
+    Los índices de PEG superiores a 1,0 generalmente se consideran desfavorables, lo que sugiere que una acción está sobrevaluada. Por el contrario, los ratios son más bajos
+    superiores a 1,0 se consideran mejores, lo que indica que una acción está infravalorada.
+  """
+  def get_peg(self):
+    return round(self.per / self.g, 2)
+
 
   def get_stock_name(self):
     return self.stock_name
@@ -952,8 +960,13 @@ print('analisis valor bolsa/libro:')
 print(b.check_valor_bolsa_libro())
 print('')
 
+# PER (para empresas dividenderas) 12-15
 print('ratio precio / utilidad (PER):')
 print(b.get_per())
+print('')
+
+print('ratio (precio / utilidad) / g (PEG):')
+print(b.get_peg())
 print('')
 
 print('deuda total / patrimonio:')
