@@ -60,7 +60,7 @@ empresas = {
     "SONDA":          [ "41489", "sonda" ],
     "SQM-B":          [ "41491", "soquimich-b" ],
 
-  } 
+} 
 
 # funciones auxiliares
 def get_slug(nombre):
@@ -83,17 +83,15 @@ def print_no():
 
 def convert(balances): 
   strNumber = balances.text.replace(",", ".").strip('%')
-  if strNumber == '-':
-    return float(0)
-  else:
-    return float(strNumber)
+  if strNumber != '-': 
+    return float(strNumber)  
 
+  return float(0)
   
+
 def get_annual_data(balances, a,b,c,d):
   args = [a,b,c,d]
-  lista = []
-  for a in args: 
-    lista.append(convert(balances[a]))
+  lista = [ convert(balances[x]) for x in args]
   return lista
 
 # c = un tercer array donde aplicar la funcion d
@@ -197,7 +195,6 @@ class Estados:
     except:
       print("una excepcion ocurrio al intentar leer el precio actual")
 
-
   def set_tasa_dividendos(self):
     url= 'https://es.investing.com/equities/' + self.slug + '-dividends'
     try:
@@ -205,19 +202,13 @@ class Estados:
       soup = BeautifulSoup(result.content, 'html.parser')
       elements = soup.find_all('td')
 
-      indexes = []
+      lista = []
       for i, a in enumerate(elements):
         # print(str(i) + ':' + a.text)
         if 'IBEX 35' in a.text:
           break 
         if '%' in a.text or '-' in a.text:
-          indexes.append(i)
-
-      lista = []
-      # print(indexes)
-
-      for j in indexes:
-        lista.append(convert(elements[j]))
+          lista.append(convert(a))
 
       return np.mean(lista)
 
@@ -238,16 +229,8 @@ class Estados:
 
   def total_efectivo_e_inversiones(self):
     total_arr = self.balances[5].text.splitlines()
-    total = []
-    for i, t in enumerate(total_arr):
-        if i in [14,15,16,17]:
-          if t == '-':
-            total.append(0) 
-          else:
-            tt = t.replace(",", ".").strip('%')
-            total.append(float(tt))
-
-    return total   
+    total = [ t for i,t in enumerate(total_arr)  if i in [14,15,16,17] ]
+    return [ 0 if u == '-' else float(u.replace(",", ".").strip('%')) for u in total ]
 
 
   def total_capital_trabajo(self):
@@ -286,21 +269,14 @@ class Estados:
   # Acciones comunes en circulación
     accionesComunes = get_annual_data(self.balances,231,232,233,234)
     accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
-    lista = []
-    for i, a in enumerate(accionesComunes):
-      lista.append(a + accionesPreferidas[i])
+    return [ a + accionesPreferidas[i] for i, a in enumerate(accionesComunes)]
 
-    return lista
 
   def valor_libro_ajustado(self):
     accionesCirculando = self.acciones_circulando()
     patrimonioNeto = self.patrimonio_neto()
-    lista = []
-    for i, a in enumerate(accionesCirculando):
-      resultado = patrimonioNeto[i] / a
-      lista.append(round(resultado,2)) if a > 0 else lista.append(0)
+    return [ round(patrimonioNeto[i] / a, 2) if a > 0 else 0 for i, a in enumerate(accionesCirculando)]
 
-    return lista
 
   def check_test_acido(self):
     totalTestAcido = self.total_test_acido()
@@ -418,12 +394,7 @@ class Estados:
   def total_margen_bruto_calculado(self):
     totalIngresos = self.total_ingresos()
     costoVenta = self.total_costo_venta()
-    lista = []
-
-    for i, t in enumerate(totalIngresos):
-      lista.append(round(self.margen_bruto(t, costoVenta[i]), 2))
-      
-    return lista  
+    return [ round(self.margen_bruto(t, costoVenta[i]), 2) for i, t in enumerate(totalIngresos)]
 
   # Rentabilidad sobre el capital (equity) 5YA
   def set_ROE(self):
@@ -445,10 +416,11 @@ class Estados:
         break
 
     result = convert(self.ratios[index])
-    if result > 100.0:
-      return 100.0
-    else:
-      return result
+
+    if result < 100.0:
+       return result
+
+    return 100.0
 
   # price earning ratio  (relacion entre el precio de la accion presente y la ganancia que tiene la empresa por accion) 
   def set_per(self):
@@ -526,7 +498,6 @@ class Estados:
 
   def set_precio_accion_futuro(self):
     return self.eps_futuro * self.get_multiplo_per()
-
 
   # si son acciones con dividendos, se debe agregar la tasa de retorno por ella  (rentabilidad en %)
   def rentabilidad_capital(self, impuesto_dividendo):
@@ -950,6 +921,7 @@ print('ratio (precio / utilidad) / g (PEG):')
 print(b.get_peg())
 print('')
 
+# Deuda / patrimonio >>> 1, muy superior a 1,  mejor hacerse a un lado.
 print('deuda total / patrimonio:')
 print(b.total_razon_deuda_patrimonio())
 print('')
