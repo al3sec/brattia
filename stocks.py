@@ -82,10 +82,9 @@ def print_no():
 
 
 def convert(balances): 
-  number = 0
   strNumber = balances.text.replace(",", ".").strip('%')
   if strNumber == '-':
-    return float(number)
+    return float(0)
   else:
     return float(strNumber)
 
@@ -95,6 +94,21 @@ def get_annual_data(balances, a,b,c,d):
   lista = []
   for a in args: 
     lista.append(convert(balances[a]))
+  return lista
+
+# c = un tercer array donde aplicar la funcion d
+def array_calculations(a, b, d, c=None):
+  lista = []
+  a = a()
+  b = b()
+  if c is not None:
+    c = c()
+    for i, x in enumerate(a):
+      lista.append(round(d(x, b[i], c[i]), 2))
+  else:
+    for i, x in enumerate(a):
+      lista.append(round(d(x, b[i]), 2))
+   
   return lista
 
 def razon_crecimiento(arreglo):
@@ -175,6 +189,7 @@ class Estados:
         # print(str(i) + ':' + a.text)
         if a.text == 'Resumen':
           index = i + 1
+          break
 
       precio = elements[index].text.replace('.', '').replace(',', '.')
       # print(str(precio))
@@ -232,40 +247,27 @@ class Estados:
             tt = t.replace(",", ".").strip('%')
             total.append(float(tt))
 
-    return total          
+    return total   
+
 
   def total_capital_trabajo(self):
-    activo = self.total_activo_circulante()
-    pasivo = self.total_pasivo_circulante()
-    lista = []
-
-    for i, a in enumerate(activo):
-      lista.append(self.capital_de_trabajo(a, pasivo[i]))
-      
-    return lista
+    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.capital_de_trabajo)
 
 
   def total_test_acido(self):
-    activo = self.total_activo_circulante()
-    pasivo = self.total_pasivo_circulante()
-    inventario = self.total_inventario()
-    lista = []
-
-    for i, a in enumerate(activo):
-      lista.append(round(self.razon_corriente(a, pasivo[i], inventario[i]),2))
-  
-    return lista
+    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente, self.total_inventario)
 
 
   def total_razon_corriente(self):
-    activo = self.total_activo_circulante()
-    pasivo = self.total_pasivo_circulante()
-    lista = []
-  
-    for i, a in enumerate(activo):
-      lista.append(round(self.razon_corriente(a, pasivo[i]), 2))
-      
-    return lista
+    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente)
+
+
+  def total_razon_endeudamiento(self):
+    return array_calculations(self.pasivos_totales, self.activos_totales, self.razon_endeudamiento)
+
+
+  def total_razon_deuda_patrimonio(self):
+    return array_calculations(self.pasivos_totales, self.patrimonio_neto, self.razon_endeudamiento)
 
 
   def pasivos_totales(self):
@@ -278,27 +280,6 @@ class Estados:
 
   def patrimonio_neto(self):
     return get_annual_data(self.balances,175,176,177,178)
-
-
-  def total_razon_endeudamiento(self):
-    activo = self.activos_totales()
-    pasivo = self.pasivos_totales()
-    lista = []
-
-    for i, a  in enumerate(activo):
-      lista.append(round(self.razon_endeudamiento(pasivo[i], a), 2))
-      
-    return lista
-
-  def total_razon_deuda_patrimonio(self):
-    pasivo = self.pasivos_totales()
-    patrimonio = self.patrimonio_neto()
-    lista = []
-
-    for i, a  in enumerate(pasivo):
-      lista.append(round(self.razon_endeudamiento(a, patrimonio[i]),2))
-      
-    return lista
 
 
   def acciones_circulando(self):
@@ -540,7 +521,7 @@ class Estados:
 
 
   def set_eps_futuro(self, n):
-    return self.eps_presente * (1 + (self.g/100)) ** n
+    return self.eps_presente * (1 + (self.g / 100)) ** n
 
 
   def set_precio_accion_futuro(self):
@@ -1005,7 +986,7 @@ check_razon_decreciente(razonCasanegra)
 
 # TODO:
 # -----
-#
+# Gráfico Amigo
 # DPS/EPS (dividend per share / earning per share) 
 # --------------------------------------------------------------------------------------------------------------------
 # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
