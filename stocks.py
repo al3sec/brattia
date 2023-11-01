@@ -90,24 +90,15 @@ def convert(balances):
   
 
 def get_annual_data(balances, a,b,c,d):
-  args = [a,b,c,d]
-  lista = [ convert(balances[x]) for x in args]
-  return lista
+  return [ convert(balances[x]) for x in [a,b,c,d] ]
 
 # c = un tercer array donde aplicar la funcion d
 def array_calculations(a, b, d, c=None):
-  lista = []
   a = a()
   b = b()
-  if c is not None:
-    c = c()
-    for i, x in enumerate(a):
-      lista.append(round(d(x, b[i], c[i]), 2))
-  else:
-    for i, x in enumerate(a):
-      lista.append(round(d(x, b[i]), 2))
-   
-  return lista
+  if c is not None: c = c()
+  return [ round(d(x, b[i], c[i]), 2) if c is not None else round(d(x, b[i]), 2) for i, x in enumerate(a)]
+
 
 def razon_crecimiento(arreglo):
   x = np.array([2022, 2021, 2020, 2019])
@@ -335,6 +326,9 @@ class Estados:
     else:
       print('precio bolsa libro no debe ser 0')
 
+  def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
+    return round((activo_circulante - total_efectivo) / costo_venta, 2)
+
    # estado resultado los ultimos 4 años 
   def set_estado_resultado(self):
     url= base_url + self.stock_id + '&report_type=INC&period_type=' + self.period_type
@@ -356,15 +350,8 @@ class Estados:
       print("una excepcion ocurrio al intentar leer los ratios")
 
   # (AC-Caja) / Ventas
-  def casanegra_ratio(self):
-    totalActivoCirculante = self.total_activo_circulante()
-    totalEfectivo = self.total_efectivo_e_inversiones()
-    costoVenta = self.total_costo_venta()
-    lista = []
-    for i, a in enumerate(costoVenta):
-        lista.append(round((totalActivoCirculante[i] - totalEfectivo[i]) / costoVenta[i], 2))
-
-    return lista
+  def total_casanegra_ratio(self):
+    return array_calculations(self.total_activo_circulante, self.total_efectivo_e_inversiones, self.casanegra_ratio, self.total_costo_venta)
 
 
   def total_ingresos(self):
@@ -946,7 +933,7 @@ print('FCF / Patrimonio (actualizado):')
 print(b.fcf_patrimonio())
 print('')
 print('(AC-Caja) / Ventas:')
-casanegra = b.casanegra_ratio()
+casanegra = b.total_casanegra_ratio()
 print(casanegra)
 print('')
 
