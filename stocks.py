@@ -154,15 +154,15 @@ class Estados:
     if pasivo_circulante > 0:
        return (activo_circulante - inventario) / pasivo_circulante
     else:
-      print('pasivo circulante no debe ser 0')
+      print('pasivo circulante debe ser mayor a 0')
       return 0
 
   # porcion de activos que estan financiados por terceros
   def razon_endeudamiento(self, pasivos_totales, activos_totales):
-    if activos_totales != 0:
+    if activos_totales > 0:
       return pasivos_totales / activos_totales
     else:
-      print('activos totales no deben ser 0')
+      print('activos totales deben ser mayor 0')
       return 0
 
   # ultimo precio de la accion
@@ -218,6 +218,19 @@ class Estados:
   def total_inventario(self):
     return get_annual_data(self.balances,37,38,39,40)
 
+
+  def pasivos_totales(self):
+    return get_annual_data(self.balances,139,140,141,142)
+
+
+  def activos_totales(self):
+    return get_annual_data(self.balances,52,53,54,55)
+
+
+  def patrimonio_neto(self):
+    return get_annual_data(self.balances,175,176,177,178)
+
+
   def total_efectivo_e_inversiones(self):
     total_arr = self.balances[5].text.splitlines()
     total = [ t for i,t in enumerate(total_arr)  if i in [14,15,16,17] ]
@@ -244,17 +257,6 @@ class Estados:
     return array_calculations(self.pasivos_totales, self.patrimonio_neto, self.razon_endeudamiento)
 
 
-  def pasivos_totales(self):
-    return get_annual_data(self.balances,139,140,141,142)
-
-
-  def activos_totales(self):
-    return get_annual_data(self.balances,52,53,54,55)
-
-
-  def patrimonio_neto(self):
-    return get_annual_data(self.balances,175,176,177,178)
-
 
   def acciones_circulando(self):
   # Acciones comunes en circulación
@@ -271,7 +273,6 @@ class Estados:
 
   def check_test_acido(self):
     totalTestAcido = self.total_test_acido()
-    #return all([val > 1 for val in totalTestAcido])
     mean = np.mean(totalTestAcido)
     print(round(mean, 2))
     print_si() if mean >= 1 else print_no()
@@ -315,16 +316,16 @@ class Estados:
 
 
   def roe_calculado(self, utilidad_neta, patrimonio):
-    if patrimonio != 0:
+    if patrimonio > 0 :
       return utilidad_neta / patrimonio
     else:
-      print('patrimonio no deben ser 0')
+      print('patrimonio deben ser mayor a 0')
 
   def ROE_ajustado(self):
-    if self.precio_valor_contable != 0:
+    if self.precio_valor_contable > 0:
       return round(self.ROE / self.precio_valor_contable, 2)
     else:
-      print('precio bolsa libro no debe ser 0')
+      print('precio bolsa libro debe ser mayor a 0')
 
   def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
     return round((activo_circulante - total_efectivo) / costo_venta, 2)
