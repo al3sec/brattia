@@ -59,6 +59,7 @@ empresas = {
     "SECURITY":       [ "41487", "grupo-security" ],
     "SONDA":          [ "41489", "sonda" ],
     "SQM-B":          [ "41491", "soquimich-b" ],
+    "LATAM":          [ "41461", "latam-airlines" ],
 
 } 
 
@@ -130,7 +131,7 @@ class Estados:
     self.eps_presente =  self.set_eps_presente()
     self.eps_futuro = self.set_eps_futuro(n)
     self.precio_accion_futuro = self.set_precio_accion_futuro()
-    self.tasa_dividendos = self.set_tasa_dividendos()
+    self.tasa_dividendos = self.dividend_yield()
     self.precio_valor_contable = self.set_precio_valor_contable()
     self.per = self.set_per()
     self.n = n
@@ -185,26 +186,6 @@ class Estados:
       return float(precio)
     except:
       print("una excepcion ocurrio al intentar leer el precio actual")
-
-  def set_tasa_dividendos(self):
-    url= 'https://es.investing.com/equities/' + self.slug + '-dividends'
-    try:
-      result = httpx.get(url)
-      soup = BeautifulSoup(result.content, 'html.parser')
-      elements = soup.find_all('td')
-
-      lista = []
-      for i, a in enumerate(elements):
-        # print(str(i) + ':' + a.text)
-        if 'IBEX 35' in a.text:
-          break 
-        if '%' in a.text or '-' in a.text:
-          lista.append(convert(a))
-
-      return np.mean(lista)
-
-    except:
-      print("una excepcion ocurrio al intentar leer la tasa de dividendos")
 
    # lista con los ultimos 4 años de activo circulante
   def total_activo_circulante(self):
@@ -877,12 +858,6 @@ precioPresente = b.get_precio_actual()
 
 print('precio actual:')
 print(precioPresente)
-print('')
-
-tasaDividendo = b.get_tasa_dividendos() / 100
-
-print('tasa promedio últimos dividendos (%):')
-print(100 * tasaDividendo)
 print('')
 
 rentabilidad = b.rentabilidad_capital(0)
