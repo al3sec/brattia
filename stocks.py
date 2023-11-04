@@ -4,6 +4,7 @@
 
 import httpx
 import numpy as np
+import argparse
 from bs4 import BeautifulSoup
 from colorama import Fore, Back, Style
 
@@ -235,18 +236,24 @@ class Estados:
         return get_annual_data(self.resultados,153,154,155,156)
 
 
+    def acciones_circulando(self):
+        accionesComunes = get_annual_data(self.balances,231,232,233,234)
+        accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
+        return [ a + accionesPreferidas[i] for i, a in enumerate(accionesComunes)]
+
+
     def total_efectivo_e_inversiones(self):
         total_arr = self.balances[5].text.splitlines()
         total = [ t for i,t in enumerate(total_arr)  if i in [14,15,16,17] ]
         return [ 0 if u == '-' else float(u.replace(",", ".").strip('%')) for u in total ]
 
 
-    def total_capital_trabajo(self):
-        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.capital_de_trabajo)
-
-
     def total_test_acido(self):
         return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente, self.total_inventario)
+
+
+    def total_capital_trabajo(self):
+        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.capital_de_trabajo)
 
 
     def total_razon_corriente(self):
@@ -259,12 +266,6 @@ class Estados:
 
     def total_razon_deuda_patrimonio(self):
         return array_calculations(self.pasivos_totales, self.patrimonio_neto, self.razon_endeudamiento)
-
-
-    def acciones_circulando(self):
-        accionesComunes = get_annual_data(self.balances,231,232,233,234)
-        accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
-        return [ a + accionesPreferidas[i] for i, a in enumerate(accionesComunes)]
 
 
     def valor_libro_ajustado(self):
@@ -570,360 +571,368 @@ class Estados:
         return self.stock_name
 
 
-b = Estados('QUINENCO', 'Annual', 5)
-
-# --------------------------------------------------------------------------------------------------------------------
-# a) Balance  (fotografía de la empresa)
-
-"""    
-    Criterios a cumplir en los balances anuales:
-
-       1) capital de trabajo > 0
-       2) razon corriente > 1
-       3) test acido > 1
-       4) razon de endeudamiento < 50%
-
-       5) Activos totales crecientes
-       6) Patrimonio creciente (total equity)
-       7) Numero de acciones constantes o disminuyendo
-
-"""
-print('nombre de la accion:')
-print(b.get_stock_name())
-print('')
-print('total activo circulante:')
-totalActivoCirculante = b.total_activo_circulante()
-print(totalActivoCirculante)
-print('')
-print('total pasivo circulante:')
-print(b.total_pasivo_circulante())
-print('')
-
-print('total capital de trabajo:')
-total = b.total_capital_trabajo()
-print(total)
-print('')
-
-print('total razon corriente:')
-razon = b.total_razon_corriente()
-print(razon)
-print('')
-
-print('total inventario:')
-inventario = b.total_inventario()
-print(inventario)
-print('')
-
-print('total test acido:')
-test = b.total_test_acido()
-print(test)
-print('')
-
-print('activos totales:')
-activosTotales = b.activos_totales()
-print(activosTotales)
-print('')
-
-print('pasivos totales:')
-pasivosTotales = b.pasivos_totales()
-print(pasivosTotales)
-print('')
-
-print('total razon endeudamiento:')
-totalRazonEndeudamiento = b.total_razon_endeudamiento()
-print(totalRazonEndeudamiento)
-print('')
-
-print('razon crecimiento activos totales:')
-razonCrecimientoActivos = razon_crecimiento(activosTotales)
-print(razonCrecimientoActivos)
-print('')
-
-print('razon crecimiento activos circulantes:')
-razonActivoCirculante = razon_crecimiento(totalActivoCirculante)
-print(razonActivoCirculante)
-print('')
-
-print('patrimonio neto:')
-patrimonioNeto = b.patrimonio_neto()
-print(patrimonioNeto)
-print('')
-
-print('razon crecimiento patrimonio:')
-razonPatrimonio = razon_crecimiento(patrimonioNeto)
-print(razonPatrimonio)
-print('')
-
-print('acciones circulando:')
-acciones = b.acciones_circulando()
-print(acciones)
-print('')
-
-print('razon crecimiento acciones:')
-razonAcciones = razon_crecimiento(acciones)
-print(razonAcciones)
-print('')
-
-
-# 1) capital de trabajo > 0
-print('total capital de trabajo positivo?:')
-b.check_capital_trabajo()
-
-# 2) razon corriente > 1
-print('razon corriente > 1?:')
-b.check_razon_corriente()
 
-# 3) test acido > 1
-print('test acido > 1?:')
-b.check_test_acido()
+# main
+if __name__=="__main__":
+
+    parser = argparse.ArgumentParser(prog="stocks.py", epilog="Fundamental Analisis Script", usage="stocks.py [options] -n <STOCK-NAME>", prefix_chars='-', add_help=True)
+  
+    parser.add_argument('-n', action='store', metavar='stock-name', type=str, help='Stock Name.\tExample: AAPL', required=True)
+    parser.add_argument('-v', action='version', version='alpha - v1.0', help='Prints the version of stocks.py')
+
+    # Assign given arguments
+    args = parser.parse_args()
+    b = Estados(args.n, 'Annual', 5)
+
+    # --------------------------------------------------------------------------------------------------------------------
+    # a) Balance  (fotografía de la empresa)
+
+    """    
+        Criterios a cumplir en los balances anuales:
+
+           1) capital de trabajo > 0
+           2) razon corriente > 1
+           3) test acido > 1
+           4) razon de endeudamiento < 50%
+
+           5) Activos totales crecientes
+           6) Patrimonio creciente (total equity)
+           7) Numero de acciones constantes o disminuyendo
+
+    """
+    print('nombre de la accion:')
+    print(b.get_stock_name())
+    print('')
+    print('total activo circulante:')
+    totalActivoCirculante = b.total_activo_circulante()
+    print(totalActivoCirculante)
+    print('')
+    print('total pasivo circulante:')
+    print(b.total_pasivo_circulante())
+    print('')
+
+    print('total capital de trabajo:')
+    total = b.total_capital_trabajo()
+    print(total)
+    print('')
+
+    print('total razon corriente:')
+    razon = b.total_razon_corriente()
+    print(razon)
+    print('')
+
+    print('total inventario:')
+    inventario = b.total_inventario()
+    print(inventario)
+    print('')
+
+    print('total test acido:')
+    test = b.total_test_acido()
+    print(test)
+    print('')
+
+    print('activos totales:')
+    activosTotales = b.activos_totales()
+    print(activosTotales)
+    print('')
+
+    print('pasivos totales:')
+    pasivosTotales = b.pasivos_totales()
+    print(pasivosTotales)
+    print('')
+
+    print('total razon endeudamiento:')
+    totalRazonEndeudamiento = b.total_razon_endeudamiento()
+    print(totalRazonEndeudamiento)
+    print('')
+
+    print('razon crecimiento activos totales:')
+    razonCrecimientoActivos = razon_crecimiento(activosTotales)
+    print(razonCrecimientoActivos)
+    print('')
+
+    print('razon crecimiento activos circulantes:')
+    razonActivoCirculante = razon_crecimiento(totalActivoCirculante)
+    print(razonActivoCirculante)
+    print('')
+
+    print('patrimonio neto:')
+    patrimonioNeto = b.patrimonio_neto()
+    print(patrimonioNeto)
+    print('')
+
+    print('razon crecimiento patrimonio:')
+    razonPatrimonio = razon_crecimiento(patrimonioNeto)
+    print(razonPatrimonio)
+    print('')
+
+    print('acciones circulando:')
+    acciones = b.acciones_circulando()
+    print(acciones)
+    print('')
+
+    print('razon crecimiento acciones:')
+    razonAcciones = razon_crecimiento(acciones)
+    print(razonAcciones)
+    print('')
 
-# 4) razon de endeudamiento < 50%
-print('razon endeudamiento menor a 0.5?:')
-b.check_razon_endeudamiento()
 
-# 5) Activos totales crecientes
-print('razon crecimiento activos > 0 :')
-check_razon_creciente(razonCrecimientoActivos)
+    # 1) capital de trabajo > 0
+    print('total capital de trabajo positivo?:')
+    b.check_capital_trabajo()
 
-# 6) Patrimonio creciente (total equity)
-print('patrimonio creciente? :')
-check_razon_creciente(razonPatrimonio)
+    # 2) razon corriente > 1
+    print('razon corriente > 1?:')
+    b.check_razon_corriente()
 
-# 7) Numero de acciones constantes o disminuyendo
-print('acciones constantes o disminuyendo? :')
-check_razon_decreciente(razonAcciones)
+    # 3) test acido > 1
+    print('test acido > 1?:')
+    b.check_test_acido()
 
-# --------------------------------------------------------------------------------------------------------------------
-# b) Estado Resultado  (reporte en un periodo determinado de tiempo respecto ingresos y egresos)
+    # 4) razon de endeudamiento < 50%
+    print('razon endeudamiento menor a 0.5?:')
+    b.check_razon_endeudamiento()
 
-"""    
-    Criterios a cumplir en el estado resultado:
+    # 5) Activos totales crecientes
+    print('razon crecimiento activos > 0 :')
+    check_razon_creciente(razonCrecimientoActivos)
 
-       1) ingresos crecientes
-       2) margen bruto creciente (sobre 40 %)
-       3) resultado operacional creciente
-       4) utilidad neta creciente (sobre 20 %)
-       5) EPS creciente
-       6) ROE > 15 %
+    # 6) Patrimonio creciente (total equity)
+    print('patrimonio creciente? :')
+    check_razon_creciente(razonPatrimonio)
 
+    # 7) Numero de acciones constantes o disminuyendo
+    print('acciones constantes o disminuyendo? :')
+    check_razon_decreciente(razonAcciones)
 
-"""
+    # --------------------------------------------------------------------------------------------------------------------
+    # b) Estado Resultado  (reporte en un periodo determinado de tiempo respecto ingresos y egresos)
 
-print('total ingresos:')
-totalIngresos = b.total_ingresos()
-print(totalIngresos)
-print('')
+    """    
+        Criterios a cumplir en el estado resultado:
 
-razonIngresos = razon_crecimiento(totalIngresos)
+           1) ingresos crecientes
+           2) margen bruto creciente (sobre 40 %)
+           3) resultado operacional creciente
+           4) utilidad neta creciente (sobre 20 %)
+           5) EPS creciente
+           6) ROE > 15 %
 
-print('razon ingresos:')
-print(razonIngresos)
-print('')
+ 
+    """
 
-# 1) ingresos crecientes
-print('razon ingresos creciente?:')
-check_razon_creciente(razonIngresos)
+    print('total ingresos:')
+    totalIngresos = b.total_ingresos()
+    print(totalIngresos)
+    print('')
 
-print('total margen bruto:')
-totalMargenBruto = b.total_margen_bruto()
-print(totalMargenBruto)
-print('')
+    razonIngresos = razon_crecimiento(totalIngresos)
 
-razonMargenBruto = razon_crecimiento(totalMargenBruto)
+    print('razon ingresos:')
+    print(razonIngresos)
+    print('')
 
-print('razon margen bruto:')
-print(razonMargenBruto)
-print('')
+    # 1) ingresos crecientes
+    print('razon ingresos creciente?:')
+    check_razon_creciente(razonIngresos)
 
-print('total margen bruto calculado (%):')
-margenBrutoCalculado = b.total_margen_bruto_calculado()
-print(margenBrutoCalculado)
-print('')
+    print('total margen bruto:')
+    totalMargenBruto = b.total_margen_bruto()
+    print(totalMargenBruto)
+    print('')
 
+    razonMargenBruto = razon_crecimiento(totalMargenBruto)
 
-# 2) margen bruto creciente (sobre 40 %)
-print('margen bruto creciente?:')
-check_razon_creciente(razonMargenBruto)
+    print('razon margen bruto:')
+    print(razonMargenBruto)
+    print('')
 
+    print('total margen bruto calculado (%):')
+    margenBrutoCalculado = b.total_margen_bruto_calculado()
+    print(margenBrutoCalculado)
+    print('')
 
-# 3) resultado operacional creciente
-print('total resultado explotacion:')
-totalResultadoExplotacion = b.total_resultado_explotacion()
-print(totalResultadoExplotacion)
-print('')
 
+    # 2) margen bruto creciente (sobre 40 %)
+    print('margen bruto creciente?:')
+    check_razon_creciente(razonMargenBruto)
 
-razonResultadoExplotacion = razon_crecimiento(totalResultadoExplotacion)
-print('razon resultado explotacion:')
-print(razonResultadoExplotacion)
-print('')
-print('resultado explotacion creciente?:')
-check_razon_creciente(razonResultadoExplotacion)
 
+    # 3) resultado operacional creciente
+    print('total resultado explotacion:')
+    totalResultadoExplotacion = b.total_resultado_explotacion()
+    print(totalResultadoExplotacion)
+    print('')
 
-# 4) utilidad neta creciente (sobre 20 %)
-totalResultadoEjercicio = b.total_resultado_ejercicio()
 
-print('total resultado ejercicio:')
-print(totalResultadoEjercicio)
-print('')
+    razonResultadoExplotacion = razon_crecimiento(totalResultadoExplotacion)
+    print('razon resultado explotacion:')
+    print(razonResultadoExplotacion)
+    print('')
+    print('resultado explotacion creciente?:')
+    check_razon_creciente(razonResultadoExplotacion)
 
-print('razon ejercicio:')
-razonResultadoEjercicio = razon_crecimiento(totalResultadoEjercicio)
-print(razonResultadoEjercicio)
-print('')
 
-print('resultado ejercicio creciente?:')
-check_razon_creciente(razonResultadoEjercicio)
+    # 4) utilidad neta creciente (sobre 20 %)
+    totalResultadoEjercicio = b.total_resultado_ejercicio()
 
-# 5) EPS creciente
-totalBeneficioPorAccion = b.total_beneficio_por_accion()
+    print('total resultado ejercicio:')
+    print(totalResultadoEjercicio)
+    print('')
 
-print('total beneficio por accion (EPS):')
-print(totalBeneficioPorAccion)
-print('')
+    print('razon ejercicio:')
+    razonResultadoEjercicio = razon_crecimiento(totalResultadoEjercicio)
+    print(razonResultadoEjercicio)
+    print('')
 
-print('razon beneficio por accion:')
-razonBeneficioPorAccion = razon_crecimiento(totalBeneficioPorAccion)
-print(razonBeneficioPorAccion)
-print('')
+    print('resultado ejercicio creciente?:')
+    check_razon_creciente(razonResultadoEjercicio)
 
-print('razon beneficio por accion creciente?:')
-check_razon_creciente(razonBeneficioPorAccion)
+    # 5) EPS creciente
+    totalBeneficioPorAccion = b.total_beneficio_por_accion()
 
-# 6) ROE > 15 %
+    print('total beneficio por accion (EPS):')
+    print(totalBeneficioPorAccion)
+    print('')
 
-print('ROE (%):')
+    print('razon beneficio por accion:')
+    razonBeneficioPorAccion = razon_crecimiento(totalBeneficioPorAccion)
+    print(razonBeneficioPorAccion)
+    print('')
 
-b.get_ROE()
-print('')
+    print('razon beneficio por accion creciente?:')
+    check_razon_creciente(razonBeneficioPorAccion)
 
-print('ROE ajustado (%):')
+    # 6) ROE > 15 %
 
-roeAjustado = b.ROE_ajustado()
-print(roeAjustado)
-print('')
+    print('ROE (%):')
 
-# --------------------------------------------------------------------------------------------------------------------
-# c) Valorizacion de la Empresa
+    b.get_ROE()
+    print('')
 
-"""    
-    Pasos para tomar decision de inversion en la empresa:
+    print('ROE ajustado (%):')
 
-       1) Determinar G para ver tasa de crecimiento
-       2) Calcular un estimado de EPS futuro
-       3) Aplicar multiplo de PER que corresponda
-       4) Calcular rentabilidad de nuestro capital
+    roeAjustado = b.ROE_ajustado()
+    print(roeAjustado)
+    print('')
 
-"""
+    # --------------------------------------------------------------------------------------------------------------------
+    # c) Valorizacion de la Empresa
 
-# 1) Determinar G para ver tasa de crecimiento
+    """    
+        Pasos para tomar decision de inversion en la empresa:
 
+           1) Determinar G para ver tasa de crecimiento
+           2) Calcular un estimado de EPS futuro
+           3) Aplicar multiplo de PER que corresponda
+           4) Calcular rentabilidad de nuestro capital
 
-tasaReparto = b.get_tasa_reparto()
+    """
 
-print('tasa de reparto (%):')
-print(tasaReparto)
-print('')
+    # 1) Determinar G para ver tasa de crecimiento
 
 
-g = b.get_tasa_crecimiento()
-print('tasa de crecimiento (%):')
-print(g)
-print('')
+    tasaReparto = b.get_tasa_reparto()
 
+    print('tasa de reparto (%):')
+    print(tasaReparto)
+    print('')
 
-print('tipo de empresa:')
-print(b.tipo_empresa())
-print('')
 
-# 2) Calcular un estimado de EPS futuro
+    g = b.get_tasa_crecimiento()
+    print('tasa de crecimiento (%):')
+    print(g)
+    print('')
 
-epsFuturo = b.get_eps_futuro()
 
-print('epsFuturo:')
-print(epsFuturo)
-print('')
+    print('tipo de empresa:')
+    print(b.tipo_empresa())
+    print('')
 
-# 3) Aplicar multiplo de PER que corresponda (precio en 5 años)
+    # 2) Calcular un estimado de EPS futuro
 
-print('precio accion a 5 años:')
-precioFuturo = b.get_precio_accion_futuro()
-print(precioFuturo)
-print('')
+    epsFuturo = b.get_eps_futuro()
 
-# Calcular rentabilidad de nuestro capital
-precioPresente = b.get_precio_actual()
+    print('epsFuturo:')
+    print(epsFuturo)
+    print('')
 
-print('precio actual:')
-print(precioPresente)
-print('')
+    # 3) Aplicar multiplo de PER que corresponda (precio en 5 años)
 
-rentabilidad = b.rentabilidad_capital(0)
+    print('precio accion a 5 años:')
+    precioFuturo = b.get_precio_accion_futuro()
+    print(precioFuturo)
+    print('')
 
-print('rentabilidad (%):')
-print(rentabilidad)
-print('')
+    # Calcular rentabilidad de nuestro capital
+    precioPresente = b.get_precio_actual()
 
-print('valor bolsa/libro:')
-bolsaLibro = b.get_precio_valor_contable()
-print(bolsaLibro)
-print('')
+    print('precio actual:')
+    print(precioPresente)
+    print('')
 
-print('analisis valor bolsa/libro:')
-print(b.check_valor_bolsa_libro())
-print('')
+    rentabilidad = b.rentabilidad_capital(0)
 
-# PER (para empresas dividenderas) 12-15
-print('ratio precio / utilidad (PER):')
-print(b.get_per())
-print('')
+    print('rentabilidad (%):')
+    print(rentabilidad)
+    print('')
 
-print('ratio (precio / utilidad) / g (PEG):')
-print(b.get_peg())
-print('')
+    print('valor bolsa/libro:')
+    bolsaLibro = b.get_precio_valor_contable()
+    print(bolsaLibro)
+    print('')
 
-# Deuda / patrimonio >>> 1, muy superior a 1,  mejor hacerse a un lado.
-print('deuda total / patrimonio:')
-print(b.total_razon_deuda_patrimonio())
-print('')
-print('valor libro ajustado:')
-print(b.valor_libro_ajustado())
-print('')
+    print('analisis valor bolsa/libro:')
+    print(b.check_valor_bolsa_libro())
+    print('')
 
-print('Earnings yield (EPS/P) (%):')
-print(b.earning_yield())
-print('')
+    # PER (para empresas dividenderas) 12-15
+    print('ratio precio / utilidad (PER):')
+    print(b.get_per())
+    print('')
 
-print('Dividend yield (D/P) (%):')
-print(b.dividend_yield())
-print('')
+    print('ratio (precio / utilidad) / g (PEG):')
+    print(b.get_peg())
+    print('')
 
-print('Dividend growth yield (%):')
-print(b.dividend_growth_rate())
-print('')
+    # Deuda / patrimonio >>> 1, muy superior a 1,  mejor hacerse a un lado.
+    print('deuda total / patrimonio:')
+    print(b.total_razon_deuda_patrimonio())
+    print('')
+    print('valor libro ajustado:')
+    print(b.valor_libro_ajustado())
+    print('')
 
-# FCF/Patrimonio (bueno: sobre 15-18%)
-print('FCF / Patrimonio (actualizado):')
-print(b.fcf_patrimonio())
-print('')
-print('(AC-Caja) / Ventas:')
-casanegra = b.total_casanegra_ratio()
-print(casanegra)
-print('')
+    print('Earnings yield (EPS/P) (%):')
+    print(b.earning_yield())
+    print('')
 
-print('(AC-Caja) / Ventas constante o disminuyendo? :')
-razonCasanegra = razon_crecimiento(casanegra)
-print(razonCasanegra)
-check_razon_decreciente(razonCasanegra)
+    print('Dividend yield (D/P) (%):')
+    print(b.dividend_yield())
+    print('')
 
+    print('Dividend growth yield (%):')
+    print(b.dividend_growth_rate())
+    print('')
 
-# TODO:
-# -----
-# Gráfico Amigo
-# DPS/EPS (dividend per share / earning per share) 
-# --------------------------------------------------------------------------------------------------------------------
-# d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
+    # FCF/Patrimonio (bueno: sobre 15-18%)
+    print('FCF / Patrimonio (actualizado):')
+    print(b.fcf_patrimonio())
+    print('')
+    print('(AC-Caja) / Ventas:')
+    casanegra = b.total_casanegra_ratio()
+    print(casanegra)
+    print('')
 
+    print('(AC-Caja) / Ventas constante o disminuyendo? :')
+    razonCasanegra = razon_crecimiento(casanegra)
+    print(razonCasanegra)
+    check_razon_decreciente(razonCasanegra)
 
 
+    # TODO:
+    # -----
+    # Gráfico Amigo
+    # DPS/EPS (dividend per share / earning per share) 
+    # --------------------------------------------------------------------------------------------------------------------
+    # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
