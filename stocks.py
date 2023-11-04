@@ -65,510 +65,509 @@ empresas = {
 
 # funciones auxiliares
 def get_slug(nombre):
-  return empresas[nombre][1]
+    return empresas[nombre][1]
    
 
 def get_id(nombre):
-  return empresas[nombre][0]
+    return empresas[nombre][0]
 
 
-def print_si():
-    print(Fore.GREEN + 'Si')
+def special_print(word, color):
+    print(Fore.GREEN + word) if color == 'GREEN' else  print(Fore.RED + word)
     print(Style.RESET_ALL)
 
-
-def print_no():
-    print(Fore.RED + 'No')
-    print(Style.RESET_ALL)
+def print_bool_result(condition):
+    special_print('Si', 'GREEN') if condition  else special_print('No', 'RED')
 
 
 def convert(balances): 
-  strNumber = balances.text.replace(",", ".").strip('%')
-  if strNumber != '-': 
-    return float(strNumber)  
+    strNumber = balances.text.replace(",", ".").strip('%')
+    if strNumber != '-': 
+        return float(strNumber)  
 
-  return float(0)
+    return float(0)
   
 
 def get_annual_data(balances, a,b,c,d):
-  return [ convert(balances[x]) for x in [a,b,c,d] ]
+    return [ convert(balances[x]) for x in [a,b,c,d] ]
 
 # c = un tercer array donde aplicar la funcion d
 def array_calculations(a, b, d, c=None):
-  a = a()
-  b = b()
-  if c is not None: c = c()
-  return [ round(d(x, b[i], c[i]), 2) if c is not None else round(d(x, b[i]), 2) for i, x in enumerate(a)]
+    a = a()
+    b = b()
+    if c is not None: c = c()
+    return [ round(d(x, b[i], c[i]), 2) if c is not None else round(d(x, b[i]), 2) for i, x in enumerate(a)]
 
 
 def razon_crecimiento(arreglo):
-  x = np.array([2022, 2021, 2020, 2019])
-  y = np.array(arreglo)
-  return round(np.linalg.lstsq(np.vstack([x, np.ones(len(x))]).T, y, rcond=None)[0][0], 2)
+    x = np.array([2022, 2021, 2020, 2019])
+    y = np.array(arreglo)
+    return round(np.linalg.lstsq(np.vstack([x, np.ones(len(x))]).T, y, rcond=None)[0][0], 2)
 
 
 def check_razon_creciente(razon):
-  print_si() if razon > 0 else print_no()
+    print_bool_result(razon > 0)
      
 
 def check_razon_decreciente(razon):
-  print_si() if razon <= 0 else print_no()
+    print_bool_result(razon <= 0)
  
 
 class Estados:
-  def __init__(self, stock_name, period_type, n):
-    self.stock_name = stock_name
-    self.period_type = period_type
-    self.slug = get_slug(stock_name)
-    self.stock_id = get_id(stock_name)
-    self.balances = self.set_balances()
-    self.resultados = self.set_estado_resultado()
-    self.ratios = self.set_ratios()
-    self.ROE = self.set_ROE()
-    self.tasa_reparto = self.set_tasa_reparto()
-    self.precio_actual = self.set_precio_actual()
-    self.g = self.set_tasa_crecimiento()
-    self.eps_presente =  self.set_eps_presente()
-    self.eps_futuro = self.set_eps_futuro(n)
-    self.precio_accion_futuro = self.set_precio_accion_futuro()
-    self.tasa_dividendos = self.dividend_yield()
-    self.precio_valor_contable = self.set_precio_valor_contable()
-    self.per = self.set_per()
-    self.n = n
+    def __init__(self, stock_name, period_type, n):
+        self.stock_name = stock_name
+        self.period_type = period_type
+        self.slug = get_slug(stock_name)
+        self.stock_id = get_id(stock_name)
+        self.balances = self.set_balances()
+        self.resultados = self.set_estado_resultado()
+        self.ratios = self.set_ratios()
+        self.ROE = self.set_ROE()
+        self.tasa_reparto = self.set_tasa_reparto()
+        self.precio_actual = self.set_precio_actual()
+        self.g = self.set_tasa_crecimiento()
+        self.eps_presente =  self.set_eps_presente()
+        self.eps_futuro = self.set_eps_futuro(n)
+        self.precio_accion_futuro = self.set_precio_accion_futuro()
+        self.tasa_dividendos = self.dividend_yield()
+        self.precio_valor_contable = self.set_precio_valor_contable()
+        self.per = self.set_per()
+        self.n = n
     
-  # balance de los ultimos 4 años 
-  def set_balances(self):
-    url= base_url + self.stock_id + '&report_type=BAL&period_type=' + self.period_type
-    try:
-      result = httpx.get(url)
-      soup = BeautifulSoup(result.content, 'html.parser')
-      return soup.find_all('td')
-    except:
-      print("una excepcion ocurrio al intentar leer el balance")
+    # balance de los ultimos 4 años 
+    def set_balances(self):
+        url= base_url + self.stock_id + '&report_type=BAL&period_type=' + self.period_type
+        try:
+            result = httpx.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            return soup.find_all('td')
+        except:
+            print("una excepcion ocurrio al intentar leer el balance")
 
-  # cantidad de dinero que tiene la empresa, para financiar sus operaciones despues de pagar las deudas de corto plazo
-  def capital_de_trabajo(self, activo_circulante, pasivo_circulante):
-	  return (activo_circulante - pasivo_circulante)
+    # cantidad de dinero que tiene la empresa, para financiar sus operaciones despues de pagar las deudas de corto plazo
+    def capital_de_trabajo(self, activo_circulante, pasivo_circulante):
+	      return (activo_circulante - pasivo_circulante)
 
-  # cantidad de pesos que tiene la empresa, para pagar cada peso de deuda (corto plazo) , si se agrega el inventario -> test acido, usar en empresas que vendan productos!
-  def razon_corriente(self, activo_circulante, pasivo_circulante, inventario=0):
-    if pasivo_circulante > 0:
-       return (activo_circulante - inventario) / pasivo_circulante
-    else:
-      print('pasivo circulante debe ser mayor a 0')
-      return 0
+    # cantidad de pesos que tiene la empresa, para pagar cada peso de deuda (corto plazo) , si se agrega el inventario -> test acido, usar en empresas que vendan productos!
+    def razon_corriente(self, activo_circulante, pasivo_circulante, inventario=0):
+        if pasivo_circulante > 0:
+            return (activo_circulante - inventario) / pasivo_circulante
+        else:
+            print('pasivo circulante debe ser mayor a 0')
+            return 0
 
-  # porcion de activos que estan financiados por terceros
-  def razon_endeudamiento(self, pasivos_totales, activos_totales):
-    if activos_totales > 0:
-      return pasivos_totales / activos_totales
-    else:
-      print('activos totales deben ser mayor 0')
-      return 0
+    # porcion de activos que estan financiados por terceros
+    def razon_endeudamiento(self, pasivos_totales, activos_totales):
+        if activos_totales > 0:
+            return pasivos_totales / activos_totales
+        else:
+            print('activos totales deben ser mayor 0')
+        return 0
 
-  # ultimo precio de la accion
-  def set_precio_actual(self):
-    url= 'https://es.investing.com/equities/' + self.slug
-    try:
-      result = httpx.get(url)
-      soup = BeautifulSoup(result.content, 'html.parser')
-      elements = soup.find_all('span')
-      index = 0
+    # ultimo precio de la accion
+    def set_precio_actual(self):
+        url= 'https://es.investing.com/equities/' + self.slug
+        try:
+            result = httpx.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            elements = soup.find_all('span')
+            index = 0
 
-      for i, a in enumerate(elements):
-        # print(str(i) + ':' + a.text)
-        if a.text == 'Resumen':
-          index = i + 1
-          break
+            for i, a in enumerate(elements):
+            # print(str(i) + ':' + a.text)
+                if a.text == 'Resumen':
+                    index = i + 1
+                    break
 
-      precio = elements[index].text.replace('.', '').replace(',', '.')
-      # print(str(precio))
-      return float(precio)
-    except:
-      print("una excepcion ocurrio al intentar leer el precio actual")
+            precio = elements[index].text.replace('.', '').replace(',', '.')
+            # print(str(precio))
+            return float(precio)
 
-   # lista con los ultimos 4 años de activo circulante
-  def total_activo_circulante(self):
-    return get_annual_data(self.balances,1,2,3,4)
+        except:
+            print("una excepcion ocurrio al intentar leer el precio actual")
 
-  # lista con los ultimos 4 años de pasivo circulante
-  def total_pasivo_circulante(self):
-    return get_annual_data(self.balances,103,104,105,106)
+     # lista con los ultimos 4 años de activo circulante
+    def total_activo_circulante(self):
+        return get_annual_data(self.balances,1,2,3,4)
 
-  # lista con los ultimos 4 años de inventario (existencias)
-  def total_inventario(self):
-    return get_annual_data(self.balances,37,38,39,40)
+    # lista con los ultimos 4 años de pasivo circulante
+    def total_pasivo_circulante(self):
+        return get_annual_data(self.balances,103,104,105,106)
 
+    # lista con los ultimos 4 años de inventario (existencias)
+    def total_inventario(self):
+        return get_annual_data(self.balances,37,38,39,40)
 
-  def pasivos_totales(self):
-    return get_annual_data(self.balances,139,140,141,142)
 
+    def pasivos_totales(self):
+        return get_annual_data(self.balances,139,140,141,142)
 
-  def activos_totales(self):
-    return get_annual_data(self.balances,52,53,54,55)
 
+    def activos_totales(self):
+        return get_annual_data(self.balances,52,53,54,55)
 
-  def patrimonio_neto(self):
-    return get_annual_data(self.balances,175,176,177,178)
 
+    def patrimonio_neto(self):
+        return get_annual_data(self.balances,175,176,177,178)
 
-  def total_efectivo_e_inversiones(self):
-    total_arr = self.balances[5].text.splitlines()
-    total = [ t for i,t in enumerate(total_arr)  if i in [14,15,16,17] ]
-    return [ 0 if u == '-' else float(u.replace(",", ".").strip('%')) for u in total ]
 
+    def total_ingresos(self):
+        return get_annual_data(self.resultados, 1, 2, 3, 4)
 
-  def total_capital_trabajo(self):
-    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.capital_de_trabajo)
 
+    def total_margen_bruto(self):
+        return get_annual_data(self.resultados, 22, 23, 24, 25)
 
-  def total_test_acido(self):
-    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente, self.total_inventario)
 
+    def total_costo_venta(self):
+        return get_annual_data(self.resultados, 27, 28, 29, 30)
 
-  def total_razon_corriente(self):
-    return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente)
 
+    def total_resultado_explotacion(self):
+        return get_annual_data(self.resultados, 63, 64, 65, 66)
 
-  def total_razon_endeudamiento(self):
-    return array_calculations(self.pasivos_totales, self.activos_totales, self.razon_endeudamiento)
+    # utilidad neta
+    def total_resultado_ejercicio(self):
+        return get_annual_data(self.resultados, 143, 144, 145, 146)
 
 
-  def total_razon_deuda_patrimonio(self):
-    return array_calculations(self.pasivos_totales, self.patrimonio_neto, self.razon_endeudamiento)
+    def total_beneficio_por_accion(self):
+        return get_annual_data(self.resultados,153,154,155,156)
 
 
+    def total_efectivo_e_inversiones(self):
+        total_arr = self.balances[5].text.splitlines()
+        total = [ t for i,t in enumerate(total_arr)  if i in [14,15,16,17] ]
+        return [ 0 if u == '-' else float(u.replace(",", ".").strip('%')) for u in total ]
 
-  def acciones_circulando(self):
-  # Acciones comunes en circulación
-    accionesComunes = get_annual_data(self.balances,231,232,233,234)
-    accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
-    return [ a + accionesPreferidas[i] for i, a in enumerate(accionesComunes)]
 
+    def total_capital_trabajo(self):
+        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.capital_de_trabajo)
 
-  def valor_libro_ajustado(self):
-    accionesCirculando = self.acciones_circulando()
-    patrimonioNeto = self.patrimonio_neto()
-    return [ round(patrimonioNeto[i] / a, 2) if a > 0 else 0 for i, a in enumerate(accionesCirculando)]
 
+    def total_test_acido(self):
+        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente, self.total_inventario)
 
-  def check_test_acido(self):
-    totalTestAcido = self.total_test_acido()
-    mean = np.mean(totalTestAcido)
-    print(round(mean, 2))
-    print_si() if mean >= 1 else print_no()
 
+    def total_razon_corriente(self):
+        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente)
 
-  def check_capital_trabajo(self):
-    totalCapitalTrabajo = self.total_capital_trabajo()
-    mean = np.mean(totalCapitalTrabajo)
-    print(round(mean, 2))
-    print_si() if mean > 0 else print_no()
 
+    def total_razon_endeudamiento(self):
+        return array_calculations(self.pasivos_totales, self.activos_totales, self.razon_endeudamiento)
 
-  def check_razon_corriente(self):
-    totalRazonCorriente = self.total_razon_corriente()
-    mean = np.mean(totalRazonCorriente)
-    print(round(mean, 2))
-    print_si() if mean >= 1 else print_no()
 
+    def total_razon_deuda_patrimonio(self):
+        return array_calculations(self.pasivos_totales, self.patrimonio_neto, self.razon_endeudamiento)
 
-  def check_razon_endeudamiento(self):
-    totalRazonEndeudamiento = self.total_razon_endeudamiento()
-    mean = np.mean(totalRazonEndeudamiento)
-    print(round(mean, 2))
-    print_si() if mean <= 0.5 else print_no()
 
-  # Actividad operacional
-  def margen_bruto(self, ingreso_venta, costos_directos):
-    if ingreso_venta != 0:
-      return 100 * (ingreso_venta - costos_directos) / ingreso_venta
-    else:
-      print('pasivo circulante no debe ser 0')
-      return 0  
+    def acciones_circulando(self):
+        accionesComunes = get_annual_data(self.balances,231,232,233,234)
+        accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
+        return [ a + accionesPreferidas[i] for i, a in enumerate(accionesComunes)]
 
-  # beneficios antes de intereses, impuestos, depreciacion y amortizaciones
-  def ebitda(self, margen_bruto, gastos_administracion, gastos_venta):
-    return margen_bruto - gastos_administracion - gastos_venta
 
+    def valor_libro_ajustado(self):
+        accionesCirculando = self.acciones_circulando()
+        patrimonioNeto = self.patrimonio_neto()
+        return [ round(patrimonioNeto[i] / a, 2) if a > 0 else 0 for i, a in enumerate(accionesCirculando)]
 
-  def resultado_operacional(self, ebitda, depreciacion):
-    return ebitda - depreciacion
 
+    def check_test_acido(self):
+        totalTestAcido = self.total_test_acido()
+        mean = np.mean(totalTestAcido)
+        print(round(mean, 2))
+        print_bool_result(mean >= 1)
 
-  def roe_calculado(self, utilidad_neta, patrimonio):
-    if patrimonio > 0 :
-      return utilidad_neta / patrimonio
-    else:
-      print('patrimonio deben ser mayor a 0')
 
-  def ROE_ajustado(self):
-    if self.precio_valor_contable > 0:
-      return round(self.ROE / self.precio_valor_contable, 2)
-    else:
-      print('precio bolsa libro debe ser mayor a 0')
+    def check_capital_trabajo(self):
+        totalCapitalTrabajo = self.total_capital_trabajo()
+        mean = np.mean(totalCapitalTrabajo)
+        print(round(mean, 2))
+        print_bool_result(mean > 0)
 
-  def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
-    return round((activo_circulante - total_efectivo) / costo_venta, 2)
 
-   # estado resultado los ultimos 4 años 
-  def set_estado_resultado(self):
-    url= base_url + self.stock_id + '&report_type=INC&period_type=' + self.period_type
-    try:
-      result = httpx.get(url)
-      soup = BeautifulSoup(result.content, 'html.parser')
-      return soup.find_all('td')
-    except:
-      print("una excepcion ocurrio al intentar leer el estado resultado")
+    def check_razon_corriente(self):
+        totalRazonCorriente = self.total_razon_corriente()
+        mean = np.mean(totalRazonCorriente)
+        print(round(mean, 2))
+        print_bool_result(mean >= 1)
 
-  # ratios
-  def set_ratios(self):
-    url= 'https://es.investing.com/equities/' + self.slug + '-ratios'
-    try:
-      result = httpx.get(url)
-      soup = BeautifulSoup(result.content, 'html.parser')
-      return soup.find_all('td')
-    except:
-      print("una excepcion ocurrio al intentar leer los ratios")
 
-  # (AC-Caja) / Ventas
-  def total_casanegra_ratio(self):
-    return array_calculations(self.total_activo_circulante, self.total_efectivo_e_inversiones, self.casanegra_ratio, self.total_costo_venta)
+    def check_razon_endeudamiento(self):
+        totalRazonEndeudamiento = self.total_razon_endeudamiento()
+        mean = np.mean(totalRazonEndeudamiento)
+        print(round(mean, 2))
+        print_bool_result(mean <= 0.5)
 
+    # Actividad operacional
+    def margen_bruto(self, ingreso_venta, costos_directos):
+        if ingreso_venta != 0:
+            return 100 * (ingreso_venta - costos_directos) / ingreso_venta
+        else:
+            print('pasivo circulante no debe ser 0')
+        return 0  
 
-  def total_ingresos(self):
-    return get_annual_data(self.resultados, 1, 2, 3, 4)
+    # beneficios antes de intereses, impuestos, depreciacion y amortizaciones
+    def ebitda(self, margen_bruto, gastos_administracion, gastos_venta):
+        return margen_bruto - gastos_administracion - gastos_venta
 
 
-  def total_margen_bruto(self):
-    return get_annual_data(self.resultados, 22, 23, 24, 25)
+    def resultado_operacional(self, ebitda, depreciacion):
+        return ebitda - depreciacion
 
 
-  def total_costo_venta(self):
-    return get_annual_data(self.resultados, 27, 28, 29, 30)
-
-
-  def total_resultado_explotacion(self):
-    return get_annual_data(self.resultados, 63, 64, 65, 66)
-
-  # utilidad neta
-  def total_resultado_ejercicio(self):
-    return get_annual_data(self.resultados, 143, 144, 145, 146)
-
+    def roe_calculado(self, utilidad_neta, patrimonio):
+        if patrimonio > 0 :
+            return utilidad_neta / patrimonio
+        else:
+            print('patrimonio deben ser mayor a 0')
 
-  def total_beneficio_por_accion(self):
-    return get_annual_data(self.resultados,153,154,155,156)
+    def ROE_ajustado(self):
+        if self.precio_valor_contable > 0:
+            return round(self.ROE / self.precio_valor_contable, 2)
+        else:
+            print('precio bolsa libro debe ser mayor a 0')
 
+    def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
+        return round((activo_circulante - total_efectivo) / costo_venta, 2)
 
-  def total_margen_bruto_calculado(self):
-    totalIngresos = self.total_ingresos()
-    costoVenta = self.total_costo_venta()
-    return [ round(self.margen_bruto(t, costoVenta[i]), 2) for i, t in enumerate(totalIngresos)]
+    # estado resultado los ultimos 4 años 
+    def set_estado_resultado(self):
+        url= base_url + self.stock_id + '&report_type=INC&period_type=' + self.period_type
+        try:
+            result = httpx.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            return soup.find_all('td')
+        except:
+            print("una excepcion ocurrio al intentar leer el estado resultado")
 
-  # Rentabilidad sobre el capital (equity) 5YA
-  def set_ROE(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Rentabilidad sobre la inversión 5YA' in r.text:
-        index = i + 1
+    # ratios
+    def set_ratios(self):
+        url= 'https://es.investing.com/equities/' + self.slug + '-ratios'
+        try:
+            result = httpx.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            return soup.find_all('td')
+        except:
+            print("una excepcion ocurrio al intentar leer los ratios")
+
+    # (AC-Caja) / Ventas
+    def total_casanegra_ratio(self):
+        return array_calculations(self.total_activo_circulante, 
+            self.total_efectivo_e_inversiones, self.casanegra_ratio, self.total_costo_venta)
 
-    return convert(self.ratios[index])
 
-  # tasa de reparto (payout ratio) 5YA
-  def set_tasa_reparto(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Ratio Payout TTM' == r.text:
-        index = i + 1
-        break
+    def total_margen_bruto_calculado(self):
+        totalIngresos = self.total_ingresos()
+        costoVenta = self.total_costo_venta()
+        return [ round(self.margen_bruto(t, costoVenta[i]), 2) for i, t in enumerate(totalIngresos)]
 
-    result = convert(self.ratios[index])
+    # Rentabilidad sobre el capital (equity) 5YA
+    def set_ROE(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+            # print(str(i) + ':' + r.text)
+            if 'Rentabilidad sobre la inversión 5YA' in r.text:
+                index = i + 1
 
-    if result < 100.0:
-       return result
+        return convert(self.ratios[index])
 
-    return 100.0
+    # tasa de reparto (payout ratio) 5YA
+    def set_tasa_reparto(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+            # print(str(i) + ':' + r.text)
+            if 'Ratio Payout TTM' == r.text:
+                index = i + 1
+                break
 
-  # price earning ratio  (relacion entre el precio de la accion presente y la ganancia que tiene la empresa por accion) 
-  def set_per(self):
-    if self.eps_presente != 0:
-      return self.precio_actual / self.eps_presente
-    else:
-      print('eps no debe ser cero')
-      return 0
+        result = convert(self.ratios[index])
 
-  # Dividend Yield 5 Year Avg. 5YA
-  def dividend_yield(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Promedio de Rendimiento del Dividendo en 5 Años 5YA' == r.text:
-        index = i + 1
-        break
-
-    return convert(self.ratios[index])
-
-  # Dividend Growth Rate
-  def dividend_growth_rate(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Tasa de Crecimiento de los Dividendos ANN' == r.text:
-        index = i + 1
-        break
+        if result < 100.0:
+            return result
 
-    return convert(self.ratios[index])   
+        return 100.0
 
-  # FCF/ Patrimonio (último año)
-  def fcf_patrimonio(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Precio/Flujo de caja libre TTM' == r.text:
-        index = i + 1
-        break
+    # price earning ratio  (relacion entre el precio de la accion presente y la ganancia que tiene la empresa por accion) 
+    def set_per(self):
+        if self.eps_presente != 0:
+            return self.precio_actual / self.eps_presente
+        else:
+            print('eps no debe ser cero')
+        return 0
 
-    patrimonioNeto = self.patrimonio_neto()
+    # Dividend Yield 5 Year Avg. 5YA
+    def dividend_yield(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+            # print(str(i) + ':' + r.text)
+            if 'Promedio de Rendimiento del Dividendo en 5 Años 5YA' == r.text:
+                index = i + 1
+                break
+
+        return convert(self.ratios[index])
+
+    # Dividend Growth Rate
+    def dividend_growth_rate(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+            # print(str(i) + ':' + r.text)
+            if 'Tasa de Crecimiento de los Dividendos ANN' == r.text:
+                index = i + 1
+                break
 
-    patrimonio = 0
-    for p in patrimonioNeto:
-      if p != 0:
-        patrimonio = p
-        break
-    return round(convert(self.ratios[index]) / patrimonio, 2)
+        return convert(self.ratios[index])   
 
-  # tipo de empresa por tasa de crecimiento
-  def tipo_empresa(self):
-    if self.g < 10:
-      return 'crecimiento bajo (dividenderas)'
-    if self.g < 15 and self.g > 10: 
-      return 'crecimiento medio'
-    if self.g > 15:
-      return 'crecimiento alto'
-    else:
-      return  'indefinido'
+    # FCF/ Patrimonio (último año)
+    def fcf_patrimonio(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+            # print(str(i) + ':' + r.text)
+            if 'Precio/Flujo de caja libre TTM' == r.text:
+                index = i + 1
+                break
 
+        patrimonioNeto = self.patrimonio_neto()
 
-  def set_tasa_crecimiento(self):
-    # print('roe:' + str(roe) + ', tasa de reparto:' + str(tasa_reparto) )
-    return round(self.ROE * (1 - (self.tasa_reparto / 100)), 2)
+        patrimonio = 0
+        for p in patrimonioNeto:
+            if p != 0:
+                patrimonio = p
+                break
 
+        return round(convert(self.ratios[index]) / patrimonio, 2)
 
-  def set_eps_presente(self):
-    eps_s = self.total_beneficio_por_accion()
-    return eps_s[0]
+    # tipo de empresa por tasa de crecimiento
+    def tipo_empresa(self):
+        if self.g < 10:
+            return 'crecimiento bajo (dividenderas)'
+        elif self.g < 15 and self.g > 10: 
+            return 'crecimiento medio'
+        elif self.g > 15:
+            return 'crecimiento alto'
+        else:
+            return  'indefinido'
 
 
-  def set_eps_futuro(self, n):
-    return self.eps_presente * (1 + (self.g / 100)) ** n
+    def set_tasa_crecimiento(self):
+        # print('roe:' + str(roe) + ', tasa de reparto:' + str(tasa_reparto) )
+        return round(self.ROE * (1 - (self.tasa_reparto / 100)), 2)
 
 
-  def set_precio_accion_futuro(self):
-    return self.eps_futuro * self.get_multiplo_per()
+    def set_eps_presente(self):
+        eps_s = self.total_beneficio_por_accion()
+        return eps_s[0]
 
-  # si son acciones con dividendos, se debe agregar la tasa de retorno por ella  (rentabilidad en %)
-  def rentabilidad_capital(self, impuesto_dividendo):
-    return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n)) - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo)), 2)
 
+    def set_eps_futuro(self, n):
+        return self.eps_presente * (1 + (self.g / 100)) ** n
 
-  def check_valor_bolsa_libro(self):
-    if self.precio_valor_contable >= 1.0 and self.precio_valor_contable < 6.0:
-      return 'normal'
-    elif self.precio_valor_contable >= 6.0:
-      return 'muy alto, podria corregir precio'
-    elif self.precio_valor_contable < 1.0:
-      return 'valor en bolsa por debajo del valor libro'
 
-  # precio / valor contable  (valor bolsa/libro)
-  def set_precio_valor_contable(self):
-    index = 0
-    for i, r in enumerate(self.ratios):
-      # print(str(i) + ':' + r.text)
-      if 'Precio/Valor Contable MRQ' in r.text:
-        index = i + 1 
-    # print('valor BOLSA/LIBRO:' + ratios[index].text)
+    def set_precio_accion_futuro(self):
+        return self.eps_futuro * self.get_multiplo_per()
 
-    return convert(self.ratios[index])
+    # si son acciones con dividendos, se debe agregar la tasa de retorno por ella  (rentabilidad en %)
+    def rentabilidad_capital(self, impuesto_dividendo):
+        return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n)) - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo)), 2)
 
-  # tomando eps promedio de 5A
-  def earning_yield(self):
-    epsMean = np.mean(self.total_beneficio_por_accion())
-    return round(100 * (epsMean /  self.precio_actual), 2)
 
-  # multiplo de per (g en %)
-  def get_multiplo_per(self):
-    # empresas dividenderas
-    if self.g < 10:
-      return 12.5
-    # empresas intermedias
-    elif self.g < 15: 
-      return 18
-    # empresas de crecimiento
-    elif self.g >= 15:
-      return 25
+    def check_valor_bolsa_libro(self):
+        if self.precio_valor_contable >= 1.0 and self.precio_valor_contable < 6.0:
+            return 'normal'
+        elif self.precio_valor_contable >= 6.0:
+            return 'muy alto, podria corregir precio'
+        elif self.precio_valor_contable < 1.0:
+            return 'valor en bolsa por debajo del valor libro'
 
+    # precio / valor contable  (valor bolsa/libro)
+    def set_precio_valor_contable(self):
+        index = 0
+        for i, r in enumerate(self.ratios):
+        # print(str(i) + ':' + r.text)
+            if 'Precio/Valor Contable MRQ' in r.text:
+                index = i + 1 
+        # print('valor BOLSA/LIBRO:' + ratios[index].text)
 
-  def get_ratios(self):
-    return self.ratios
+        return convert(self.ratios[index])
 
+    # tomando eps promedio de 5A
+    def earning_yield(self):
+        epsMean = np.mean(self.total_beneficio_por_accion())
+        return round(100 * (epsMean /  self.precio_actual), 2)
 
-  def get_estado_resultado(self):
-    return self.resultados
+    # multiplo de per (g en %)
+    def get_multiplo_per(self):
+        # empresas dividenderas
+        if self.g < 10:
+            return 12.5
+        # empresas intermedias
+        elif self.g < 15: 
+            return 18
+        # empresas de crecimiento
+        elif self.g >= 15:
+            return 25
 
 
-  def get_balances(self):
-    return self.balances
+    def get_ratios(self):
+        return self.ratios
 
 
-  def get_ROE(self):
-    print(Fore.GREEN + str(self.ROE)) if round(self.ROE, 2) > 15.0 else print(Fore.RED + str(self.ROE))
-    print(Style.RESET_ALL)
+    def get_estado_resultado(self):
+        return self.resultados
+
+
+    def get_balances(self):
+        return self.balances
+
+
+    def get_ROE(self):
+        print(Fore.GREEN + str(self.ROE)) if round(self.ROE, 2) > 15.0 else print(Fore.RED + str(self.ROE))
+        print(Style.RESET_ALL)
     
 
-  def get_precio_actual(self):
-    return self.precio_actual
+    def get_precio_actual(self):
+        return self.precio_actual
 
 
-  def get_precio_accion_futuro(self):
-    return round(self.precio_accion_futuro, 2)
+    def get_precio_accion_futuro(self):
+        return round(self.precio_accion_futuro, 2)
 
 
-  def get_tasa_dividendos(self):
-    return round(self.tasa_dividendos, 2)
+    def get_tasa_dividendos(self):
+        return round(self.tasa_dividendos, 2)
 
 
-  def get_precio_valor_contable(self):
-    return self.precio_valor_contable
+    def get_precio_valor_contable(self):
+        return self.precio_valor_contable
 
   
-  def get_tasa_reparto(self):
-    return self.tasa_reparto
+    def get_tasa_reparto(self):
+        return self.tasa_reparto
 
 
-  def get_tasa_crecimiento(self):
-    return self.g
+    def get_tasa_crecimiento(self):
+        return self.g
 
 
-  def get_eps_futuro(self):
-    return round(self.eps_futuro,2)
+    def get_eps_futuro(self):
+        return round(self.eps_futuro,2)
 
 
-  def get_per(self):
-    return round(self.per, 2)
+    def get_per(self):
+        return round(self.per, 2)
 
-  """
-    El valor del índice PEG de 1 representa una correlación perfecta entre el valor de mercado de la empresa y el crecimiento de sus ganancias proyectado.
-    Los índices de PEG superiores a 1,0 generalmente se consideran desfavorables, lo que sugiere que una acción está sobrevaluada. Por el contrario, los ratios son más bajos
-    superiores a 1,0 se consideran mejores, lo que indica que una acción está infravalorada.
-  """
-  def get_peg(self):
-    return round(self.per / self.g, 2)
+    """
+      El valor del índice PEG de 1 representa una correlación perfecta entre el valor de mercado de la empresa y el crecimiento de sus ganancias proyectado.
+      Los índices de PEG superiores a 1,0 generalmente se consideran desfavorables, lo que sugiere que una acción está sobrevaluada. Por el contrario, los ratios son más bajos
+      superiores a 1,0 se consideran mejores, lo que indica que una acción está infravalorada.
+    """
+    def get_peg(self):
+        return round(self.per / self.g, 2)
 
 
-  def get_stock_name(self):
-    return self.stock_name
+    def get_stock_name(self):
+        return self.stock_name
 
 
 b = Estados('QUINENCO', 'Annual', 5)
