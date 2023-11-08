@@ -61,6 +61,7 @@ empresas = {
     "SONDA":          [ "41489", "sonda" ],
     "SQM-B":          [ "41491", "soquimich-b" ],
     "LATAM":          [ "41461", "latam-airlines" ],
+    "CAROZZI":        [ "1161680", "carozzi-sa" ],
 
 } 
 
@@ -236,6 +237,16 @@ class Estados:
         return get_annual_data(self.resultados,153,154,155,156)
 
 
+    def total_dividendos_por_accion(self):
+        return get_annual_data(self.resultados,158,159,160,161)
+
+
+    def total_DPS_EPS(self):
+        totalBeneficio  = get_annual_data(self.resultados,153,154,155,156)
+        totalDividendos = get_annual_data(self.resultados,158,159,160,161)
+        return [ round(d / totalBeneficio[i], 2) for i, d in enumerate(totalDividendos)]
+
+
     def acciones_circulando(self):
         accionesComunes = get_annual_data(self.balances,231,232,233,234)
         accionesPreferidas = get_annual_data(self.balances,236,237,238,239)
@@ -374,7 +385,7 @@ class Estados:
 
         return convert(self.ratios[index])
 
-    # tasa de reparto (payout ratio) 5YA
+    # tasa de reparto (payout ratio) 5YA  (buena entre 50 y 70 %)
     def set_tasa_reparto(self):
         index = 0
         for i, r in enumerate(self.ratios):
@@ -437,7 +448,7 @@ class Estados:
                 patrimonio = p
                 break
 
-        return round(convert(self.ratios[index]) / patrimonio, 2)
+        return round(convert(self.ratios[index])/ patrimonio, 2)
 
     # tipo de empresa por tasa de crecimiento
     def tipo_empresa(self):
@@ -564,8 +575,11 @@ class Estados:
       superiores a 1,0 se consideran mejores, lo que indica que una acción está infravalorada.
     """
     def get_peg(self):
-        return round(self.per / self.g, 2)
-
+        if self.g > 0:
+            return round(self.per / self.g, 2)
+        else: 
+            print('el crecimiento debe ser mayor a cero')
+            return 0
 
     def get_stock_name(self):
         return self.stock_name
@@ -579,9 +593,9 @@ if __name__=="__main__":
   
     parser.add_argument('-n', action='store', metavar='stock-name', type=str, help='Stock Name.\tExample: AAPL', required=True)
     parser.add_argument('-v', action='version', version='alpha - v1.0', help='Prints the version of stocks.py')
-
-    # Assign given arguments
+    
     args = parser.parse_args()
+
     b = Estados(args.n, 'Annual', 5)
 
     # --------------------------------------------------------------------------------------------------------------------
@@ -929,10 +943,13 @@ if __name__=="__main__":
     print(razonCasanegra)
     check_razon_decreciente(razonCasanegra)
 
+    # DPS/EPS (dividend per share / earning per share)  fracción que efectivamente la empresa reparte
+    print('DPS/EPS para cada año:')
+    print(b.total_DPS_EPS())
+
 
     # TODO:
     # -----
     # Gráfico Amigo
-    # DPS/EPS (dividend per share / earning per share) 
     # --------------------------------------------------------------------------------------------------------------------
     # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
