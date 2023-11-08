@@ -134,6 +134,7 @@ class Estados:
         self.tasa_dividendos = self.dividend_yield()
         self.precio_valor_contable = self.set_precio_valor_contable()
         self.per = self.set_per()
+        self.flujos_caja = self.set_flujos_caja()
         self.n = n
     
     # balance de los ultimos 4 años 
@@ -239,6 +240,9 @@ class Estados:
 
     def total_dividendos_por_accion(self):
         return get_annual_data(self.resultados,158,159,160,161)
+
+    def total_free_cash_flow(self):
+        return get_annual_data(self.flujos_caja,119,120,121,122)
 
 
     def total_DPS_EPS(self):
@@ -364,6 +368,18 @@ class Estados:
         except:
             print("una excepcion ocurrio al intentar leer los ratios")
 
+    # flujos de caja
+    def set_flujos_caja(self):
+        # cambiando a anualizado
+        with httpx.Client() as client:
+            url= base_url + self.stock_id + '&report_type=CAS&period_type=' + self.period_type
+            try:
+                result = client.get(url)
+                soup = BeautifulSoup(result.content, 'html.parser')
+                return soup.find_all('td')
+            except:
+                print("una excepcion ocurrio al intentar leer los flujos de caja")
+                
     # (AC-Caja) / Ventas
     def total_casanegra_ratio(self):
         return array_calculations(self.total_activo_circulante, 
@@ -431,24 +447,12 @@ class Estados:
 
         return convert(self.ratios[index])   
 
-    # FCF/ Patrimonio (último año)
+    # FCF/ Patrimonio para todos los años.
     def fcf_patrimonio(self):
-        index = 0
-        for i, r in enumerate(self.ratios):
-            # print(str(i) + ':' + r.text)
-            if 'Precio/Flujo de caja libre TTM' == r.text:
-                index = i + 1
-                break
-
         patrimonioNeto = self.patrimonio_neto()
+        freeCash = self.total_free_cash_flow()
+        return [ 100 * round(f / patrimonioNeto[i] , 2) if patrimonioNeto[i] > 0 else 0 for i,f in enumerate(freeCash)]
 
-        patrimonio = 0
-        for p in patrimonioNeto:
-            if p != 0:
-                patrimonio = p
-                break
-
-        return round(convert(self.ratios[index])/ patrimonio, 2)
 
     # tipo de empresa por tasa de crecimiento
     def tipo_empresa(self):
@@ -930,7 +934,7 @@ if __name__=="__main__":
     print('')
 
     # FCF/Patrimonio (bueno: sobre 15-18%)
-    print('FCF / Patrimonio (actualizado):')
+    print('FCF / Patrimonio %:')
     print(b.fcf_patrimonio())
     print('')
     print('(AC-Caja) / Ventas:')
@@ -946,6 +950,10 @@ if __name__=="__main__":
     # DPS/EPS (dividend per share / earning per share)  fracción que efectivamente la empresa reparte
     print('DPS/EPS para cada año:')
     print(b.total_DPS_EPS())
+
+
+    # print('total free cash flow:')
+    # print(b.total_free_cash_flow())
 
 
     # TODO:
