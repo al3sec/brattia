@@ -373,13 +373,10 @@ class Estados:
         # cambiando a anualizado
         with httpx.Client() as client:
             url= base_url + self.stock_id + '&report_type=CAS&period_type=' + self.period_type
-            try:
-                result = client.get(url)
-                soup = BeautifulSoup(result.content, 'html.parser')
-                return soup.find_all('td')
-            except:
-                print("una excepcion ocurrio al intentar leer los flujos de caja")
-                
+            result = client.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            return soup.find_all('td')
+
     # (AC-Caja) / Ventas
     def total_casanegra_ratio(self):
         return array_calculations(self.total_activo_circulante, 
