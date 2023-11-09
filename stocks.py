@@ -42,8 +42,8 @@ empresas = {
     "ZOFRI":          [ "41500", "zofri" ], 
     "ANDINA-A":       [ "41403", "emb-andina-a" ], 
     "AESANDES":       [ "41407", "aesgener" ],
-    "AGUASA":         [ "41402", "aguas-andinas" ],
-    "BANCOCHILE":     [ "41422", "banco-de-chile-(sn)" ],
+    "AGUAS-A":        [ "41402", "aguas-andinas" ],
+    "CHILE":          [ "41422", "banco-de-chile-(sn)" ],
     "BCI":            [ "41412", "bci-(sn)" ],
     "CAP":            [ "41415", "cap" ],
     "CENCOSUD":       [ "41419", "cencosud" ],
@@ -60,9 +60,16 @@ empresas = {
     "SECURITY":       [ "41487", "grupo-security" ],
     "SONDA":          [ "41489", "sonda" ],
     "SQM-B":          [ "41491", "soquimich-b" ],
-    "LATAM":          [ "41461", "latam-airlines" ],
+    "LTM":            [ "41461", "latam-airlines" ],
     "CAROZZI":        [ "1161680", "carozzi-sa" ],
-
+    "GASCO":          [ "41451", "gasco" ],
+    "CRISTALES":      [ "41435", "cristales" ],
+    "MALLPLAZA":      [ "1094237", "plaza" ],
+    "ENTEL":          [ "41447", "entel" ],
+    "ITAUCL":         [ "41431", "corpbanca-(sn)" ],
+    "VAPORES":        [ "41497", "vapores" ],
+    "PARAUCO":        [ "41472", "parq-arauco" ],
+    "ECL":            [ "41438", "ecl-sa"],
 } 
 
 # funciones auxiliares
@@ -943,11 +950,15 @@ if __name__=="__main__":
     razonCasanegra = razon_crecimiento(casanegra)
     print(razonCasanegra)
     check_razon_decreciente(razonCasanegra)
+    print('')
 
     # DPS/EPS (dividend per share / earning per share)  fracción que efectivamente la empresa reparte
     print('DPS/EPS para cada año:')
     print(b.total_DPS_EPS())
+    print('')
 
+    print('DPS/EPS promedio % (últimos 4 años):')
+    print(100 * round(np.mean(b.total_DPS_EPS()) ,2))
 
     # print('total free cash flow:')
     # print(b.total_free_cash_flow())
