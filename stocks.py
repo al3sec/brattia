@@ -23,6 +23,7 @@ base_url = 'https://es.investing.com/instruments/Financials/changereporttypeajax
 empresas = {
 
     "AAPL":           [ "6408", "apple-computer-inc" ],
+    "MELI":           [ "16599", "mercadolibre" ],
     "ENELCHILE":      [ "976489", "enersis-chile-sa" ],
     "ENELAM":         [ "41445", "enersis" ],
     "SMU":            [ "1055339", "smu" ],
@@ -116,11 +117,11 @@ def razon_crecimiento(arreglo):
 
 def check_razon_creciente(razon):
     print_bool_result(razon > 0)
-     
+    return razon > 0
 
 def check_razon_decreciente(razon):
     print_bool_result(razon <= 0)
- 
+    return razon <= 0
 
 class Estados:
     def __init__(self, stock_name, period_type, n):
@@ -136,6 +137,7 @@ class Estados:
         self.precio_actual = self.set_precio_actual()
         self.g = self.set_tasa_crecimiento()
         self.eps_presente =  self.set_eps_presente()
+        self.eps_promedio =  self.set_eps_promedio()
         self.eps_futuro = self.set_eps_futuro(n)
         self.precio_accion_futuro = self.set_precio_accion_futuro()
         self.tasa_dividendos = self.dividend_yield()
@@ -242,7 +244,7 @@ class Estados:
 
 
     def total_beneficio_por_accion(self):
-        return get_annual_data(self.resultados,153,154,155,156)
+        return get_annual_data(self.resultados,163,164,165,166)
 
 
     def total_dividendos_por_accion(self):
@@ -322,6 +324,7 @@ class Estados:
         mean = np.mean(totalRazonEndeudamiento)
         print(round(mean, 2))
         print_bool_result(mean <= 0.5)
+
 
     # Actividad operacional
     def margen_bruto(self, ingreso_venta, costos_directos):
@@ -471,7 +474,7 @@ class Estados:
 
 
     def set_tasa_crecimiento(self):
-        # print('roe:' + str(roe) + ', tasa de reparto:' + str(tasa_reparto) )
+        # print('roe:' + str(self.ROE) + ', tasa de reparto:' + str(self.tasa_reparto) )
         return round(self.ROE * (1 - (self.tasa_reparto / 100)), 2)
 
 
@@ -479,9 +482,15 @@ class Estados:
         eps_s = self.total_beneficio_por_accion()
         return eps_s[0]
 
+    # promedio a 5 años
+    def set_eps_promedio(self):
+        eps_s = self.total_beneficio_por_accion()
+        return np.mean(eps_s)
+        
 
     def set_eps_futuro(self, n):
-        return self.eps_presente * (1 + (self.g / 100)) ** n
+        epsPromedio = self.eps_promedio
+        return epsPromedio * (1 + (self.g / 100)) ** n
 
 
     def set_precio_accion_futuro(self):
