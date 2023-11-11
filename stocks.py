@@ -356,7 +356,7 @@ class Estados:
             print('precio bolsa libro debe ser mayor a 0')
 
     def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
-        return round((activo_circulante - total_efectivo) / costo_venta, 2)
+        return round((activo_circulante - total_efectivo) / costo_venta, 2) if costo_venta > 0 else 0
 
     # estado resultado los ultimos 4 años 
     def set_estado_resultado(self):
@@ -500,6 +500,28 @@ class Estados:
     def rentabilidad_capital(self, impuesto_dividendo):
         return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n)) - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo)), 2)
 
+    # margen de seguridad tipico : 15 %
+    def analisis_casanegra(self, margenSeguridad):
+        print('--------------------------------')
+        precioPresente =  self.precio_accion_futuro / (1 + (self.g / 100))**(self.n)
+        print('precio presente calculado: ')
+        print(round(precioPresente, 2))
+        print('')
+
+        precioAjustado = (1 - (margenSeguridad / 100)) * precioPresente
+
+        print('precio presente calculado con margen de seguridad de 15%: ')
+        print(round(precioAjustado, 2))
+        print('')
+
+        if self.precio_actual <= precioAjustado:
+            print('[+] Comprar! precio actual en bolsa < precio presente ajustado')
+        else:
+            print('[+] Esperar, precio actual en bolsa > precio presente ajustado')
+
+        print('--------------------------------')
+        print('')
+
 
     def check_valor_bolsa_libro(self):
         if self.precio_valor_contable >= 1.0 and self.precio_valor_contable < 6.0:
@@ -581,6 +603,10 @@ class Estados:
 
     def get_eps_futuro(self):
         return round(self.eps_futuro,2)
+
+
+    def get_eps_promedio(self):
+        return round(self.eps_promedio,2)
 
 
     def get_per(self):
@@ -888,6 +914,12 @@ if __name__=="__main__":
     print(epsFuturo)
     print('')
 
+    epsPromedio = b.get_eps_promedio()
+
+    print('epsPromedio:')
+    print(epsPromedio)
+    print('')
+
     # 3) Aplicar multiplo de PER que corresponda (precio en 5 años)
 
     print('precio accion a 5 años:')
@@ -907,6 +939,12 @@ if __name__=="__main__":
     print('rentabilidad (%):')
     print(rentabilidad)
     print('')
+    
+    if g > 0:
+        print('Como g > 0 análisis casanegra :')
+        b.analisis_casanegra(15)
+
+
 
     print('valor bolsa/libro:')
     bolsaLibro = b.get_precio_valor_contable()
