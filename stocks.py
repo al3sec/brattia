@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 from bs4 import BeautifulSoup
 from colorama import Fore, Back, Style
+import matplotlib.pyplot as plt
 
 
 """
@@ -257,7 +258,7 @@ class Estados:
     def total_DPS_EPS(self):
         totalBeneficio  = get_annual_data(self.resultados,153,154,155,156)
         totalDividendos = get_annual_data(self.resultados,158,159,160,161)
-        return [ round(d / totalBeneficio[i], 2) for i, d in enumerate(totalDividendos)]
+        return [ round(d / totalBeneficio[i], 2) if totalBeneficio[i] > 0  else 0 for i, d in enumerate(totalDividendos)]
 
 
     def acciones_circulando(self):
@@ -521,6 +522,21 @@ class Estados:
 
         print('--------------------------------')
         print('')
+
+    # Utilidad = ingresos - gastos de explotación - gastos financieros
+    # Utilidad de explotación = ingresos - gastos de explotación
+    # Utilidad bruta = ingresos - costos de explotación
+    def grafico_amigo(self):
+        totalExplotacion = self.total_resultado_explotacion()
+        totalFCF = self.total_free_cash_flow()
+        years = np.array([2019, 2020, 2021, 2022])
+        plt.plot(years,np.array(totalExplotacion[::-1]), label="resultado explotacion")
+        plt.plot(years,np.array(totalFCF[::-1]), label="free cash flow")
+        plt.legend()
+        plt.xlabel('años')
+        plt.ylabel('$')
+        plt.title('Grafico amigo ')
+        plt.show()
 
 
     def check_valor_bolsa_libro(self):
@@ -1007,12 +1023,8 @@ if __name__=="__main__":
     print('DPS/EPS promedio % (últimos 4 años):')
     print(100 * round(np.mean(b.total_DPS_EPS()) ,2))
 
-    # print('total free cash flow:')
-    # print(b.total_free_cash_flow())
+    print('Gráfico amigo:')
+    b.grafico_amigo()
 
-
-    # TODO:
-    # -----
-    # Gráfico Amigo
     # --------------------------------------------------------------------------------------------------------------------
     # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
