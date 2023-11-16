@@ -490,7 +490,7 @@ class Estados:
     def fcf_patrimonio(self):
         patrimonioNeto = self.patrimonio_neto()
         freeCash = self.total_free_cash_flow()
-        return [ 100 * round(f / patrimonioNeto[i] , 2) 
+        return [ round(100 * (f / patrimonioNeto[i]) , 2) 
             if patrimonioNeto[i] > 0 else 0 for i,f in enumerate(freeCash)]
 
 
@@ -547,7 +547,7 @@ class Estados:
 
         precioAjustado = (1 - (margenSeguridad / 100)) * precioPresente
 
-        print('precio presente calculado con margen de seguridad de 15%: ')
+        print('precio presente calculado con margen de seguridad de' + str(margenSeguridad) + '(%): ')
         print(round(precioAjustado, 2))
         print('')
 
