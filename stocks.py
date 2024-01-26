@@ -25,25 +25,27 @@ base_url = 'https://es.investing.com/instruments/Financials/changereporttypeajax
 empresas = {
 
     "AAPL":           [ "6408", "apple-computer-inc" ],
+    "NVIDIA":         [ "6497", "nvidia-corp" ],
     "MELI":           [ "16599", "mercadolibre" ],
     "ENELCHILE":      [ "976489", "enersis-chile-sa" ],
+    "OXIQUIM":        [ "1036886", "oxiquim" ], # Se ve buena
     "ENELAM":         [ "41445", "enersis" ],
     "SMU":            [ "1055339", "smu" ],
     "MASISA":         [ "41468", "masisa" ],
-    "HABITAT":        [ "41452", "a.f.p.-habitat" ],                       
+    "HABITAT":        [ "41452", "a.f.p.-habitat" ],
     "ILC":            [ "41458", "inv-la-constru" ],
-    "AAISA":          [ "1193024", "administradora-americana-de-invers" ], 
-    "CONCHATORO":     [ "41427", "vina-concha-to" ],                       
-    "SOQUICOM":       [ "41485", "soquicom" ],                             
-    "CCU":            [ "41417", "cervecerias-un" ],                       
-    "CLOROX":         [ "7933", "clorox-co" ], 
+    "AAISA":          [ "1193024", "administradora-americana-de-invers" ],
+    "CONCHATORO":     [ "41427", "vina-concha-to" ],
+    "SOQUICOM":       [ "41485", "soquicom" ],
+    "CCU":            [ "41417", "cervecerias-un" ],
+    "CLOROX":         [ "7933", "clorox-co" ],
     "EMBONORB":       [ "41443", "embonor-b"],
     "LIPIGAS":        [ "996053", "empresas-lipigas-sa"],
     "NUEVAPOLAR":     [ "41462", "nuevapolar" ],
     "QUINENCO":       [ "41481", "quinenco" ],
     "PROVIDA":        [ "41480", "a.f.p.-provida" ],
-    "ZOFRI":          [ "41500", "zofri" ], 
-    "ANDINA-A":       [ "41403", "emb-andina-a" ], 
+    "ZOFRI":          [ "41500", "zofri" ],
+    "ANDINA-A":       [ "41403", "emb-andina-a" ],
     "AESANDES":       [ "41407", "aesgener" ],
     "AGUAS-A":        [ "41402", "aguas-andinas" ],
     "CHILE":          [ "41422", "banco-de-chile-(sn)" ],
@@ -73,13 +75,13 @@ empresas = {
     "VAPORES":        [ "41497", "vapores" ],
     "PARAUCO":        [ "41472", "parq-arauco" ],
     "ECL":            [ "41438", "ecl-sa"],
-} 
+}
 
 
 # funciones auxiliares
 def get_slug(nombre):
     return empresas[nombre][1]
-   
+
 
 def get_id(nombre):
     return empresas[nombre][0]
@@ -93,13 +95,13 @@ def print_bool_result(condition):
     special_print('Si', 'GREEN') if condition  else special_print('No', 'RED')
 
 
-def convert(balances): 
+def convert(balances):
     strNumber = balances.text.replace(",", ".").strip('%')
-    if strNumber != '-': 
-        return float(strNumber)  
+    if strNumber != '-':
+        return float(strNumber)
 
     return float(0)
-  
+
 
 def get_annual_data(balances, a,b,c,d):
     return [ convert(balances[x]) for x in [a,b,c,d] ]
@@ -152,8 +154,8 @@ class Estados:
         self.flujos_caja = self.set_flujos_caja()
         self.n = n
 
-    
-    # balance de los ultimos 4 años 
+
+    # balance de los ultimos 4 años
     def set_balances(self):
         url= base_url + self.stock_id + '&report_type=BAL&period_type=' + self.period_type
         try:
@@ -297,7 +299,7 @@ class Estados:
 
 
     def total_test_acido(self):
-        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, 
+        return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante,
             self.razon_corriente, self.total_inventario)
 
 
@@ -308,7 +310,7 @@ class Estados:
     def total_razon_corriente(self):
         return array_calculations(self.total_activo_circulante, self.total_pasivo_circulante, self.razon_corriente)
 
-   
+
     def total_razon_endeudamiento(self):
         return array_calculations(self.pasivos_totales, self.activos_totales, self.razon_endeudamiento)
 
@@ -351,8 +353,8 @@ class Estados:
             return 100 * (ingreso_venta - costos_directos) / ingreso_venta
         else:
             print('pasivo circulante no debe ser 0')
-        return 0  
-    
+        return 0
+
 
     # beneficios antes de intereses, impuestos, depreciacion y amortizaciones
     def ebitda(self, margen_bruto, gastos_administracion, gastos_venta):
@@ -368,20 +370,20 @@ class Estados:
             return utilidad_neta / patrimonio
         else:
             print('patrimonio deben ser mayor a 0')
-    
+
 
     def ROE_ajustado(self):
         if self.precio_valor_contable > 0:
             return round(self.ROE / self.precio_valor_contable, 2)
         else:
             print('precio bolsa libro debe ser mayor a 0')
-    
+
 
     def casanegra_ratio(self, activo_circulante, total_efectivo, costo_venta):
         return round((activo_circulante - total_efectivo) / costo_venta, 2) if costo_venta > 0 else 0
-    
 
-    # estado resultado los ultimos 4 años 
+
+    # estado resultado los ultimos 4 años
     def set_estado_resultado(self):
         url= base_url + self.stock_id + '&report_type=INC&period_type=' + self.period_type
         try:
@@ -390,7 +392,7 @@ class Estados:
             return soup.find_all('td')
         except:
             print("una excepcion ocurrio al intentar leer el estado resultado")
-    
+
 
     # ratios
     def set_ratios(self):
@@ -401,7 +403,7 @@ class Estados:
             return soup.find_all('td')
         except:
             print("una excepcion ocurrio al intentar leer los ratios")
-    
+
 
     # flujos de caja
     def set_flujos_caja(self):
@@ -411,11 +413,11 @@ class Estados:
             result = client.get(url)
             soup = BeautifulSoup(result.content, 'html.parser')
             return soup.find_all('td')
-    
+
 
     # (AC-Caja) / Ventas
     def total_casanegra_ratio(self):
-        return array_calculations(self.total_activo_circulante, 
+        return array_calculations(self.total_activo_circulante,
             self.total_efectivo_e_inversiones, self.casanegra_ratio, self.total_costo_venta)
 
 
@@ -423,7 +425,7 @@ class Estados:
         totalIngresos = self.total_ingresos()
         costoVenta = self.total_costo_venta()
         return [ round(self.margen_bruto(t, costoVenta[i]), 2) for i, t in enumerate(totalIngresos)]
-    
+
 
     # Rentabilidad sobre el capital (equity) 5YA
     def set_ROE(self):
@@ -434,7 +436,7 @@ class Estados:
                 index = i + 1
 
         return convert(self.ratios[index])
-    
+
 
     # tasa de reparto (payout ratio) 5YA  (buena entre 50 y 70 %)
     def set_tasa_reparto(self):
@@ -451,16 +453,16 @@ class Estados:
             return result
 
         return 100.0
-    
 
-    # price earning ratio :relacion entre el precio de la accion presente y la ganancia que tiene la empresa por accion 
+
+    # price earning ratio :relacion entre el precio de la accion presente y la ganancia que tiene la empresa por accion
     def set_per(self):
         if self.eps_presente != 0:
             return self.precio_actual / self.eps_presente
         else:
             print('eps no debe ser cero')
         return 0
-    
+
 
     # Dividend Yield 5 Year Avg. 5YA
     def dividend_yield(self):
@@ -472,7 +474,7 @@ class Estados:
                 break
 
         return convert(self.ratios[index])
-    
+
 
     # Dividend Growth Rate
     def dividend_growth_rate(self):
@@ -483,14 +485,14 @@ class Estados:
                 index = i + 1
                 break
 
-        return convert(self.ratios[index])   
-    
+        return convert(self.ratios[index])
+
 
     # FCF/ Patrimonio para todos los años.
     def fcf_patrimonio(self):
         patrimonioNeto = self.patrimonio_neto()
         freeCash = self.total_free_cash_flow()
-        return [ round(100 * (f / patrimonioNeto[i]) , 2) 
+        return [ round(100 * (f / patrimonioNeto[i]) , 2)
             if patrimonioNeto[i] > 0 else 0 for i,f in enumerate(freeCash)]
 
 
@@ -498,7 +500,7 @@ class Estados:
     def tipo_empresa(self):
         if self.g < 10:
             return 'crecimiento bajo (dividenderas)'
-        elif self.g < 15 and self.g > 10: 
+        elif self.g < 15 and self.g > 10:
             return 'crecimiento medio'
         elif self.g > 15:
             return 'crecimiento alto'
@@ -515,12 +517,12 @@ class Estados:
         eps_s = self.total_beneficio_por_accion()
         return eps_s[0]
 
-    
+
     # promedio a 5 años
     def set_eps_promedio(self):
         eps_s = self.total_beneficio_por_accion()
         return np.mean(eps_s)
-        
+
 
     def set_eps_futuro(self, n):
         epsPromedio = self.eps_promedio
@@ -533,7 +535,7 @@ class Estados:
 
     # si son acciones con dividendos, se debe agregar la tasa de retorno por ella  (rentabilidad en %)
     def rentabilidad_capital(self, impuesto_dividendo):
-        return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n))  
+        return round(100 * ((self.precio_accion_futuro / self.precio_actual)**(1/float(self.n))
             - 1 + (self.tasa_dividendos/100) * (1 - impuesto_dividendo)), 2)
 
 
@@ -547,7 +549,7 @@ class Estados:
 
         precioAjustado = (1 - (margenSeguridad / 100)) * precioPresente
 
-        print('precio presente calculado con margen de seguridad de' + str(margenSeguridad) + '(%): ')
+        print('precio presente calculado con margen de seguridad de ' + str(margenSeguridad) + '(%): ')
         print(round(precioAjustado, 2))
         print('')
 
@@ -593,7 +595,7 @@ class Estados:
         for i, r in enumerate(self.ratios):
         # print(str(i) + ':' + r.text)
             if 'Precio/Valor Contable MRQ' in r.text:
-                index = i + 1 
+                index = i + 1
         # print('valor BOLSA/LIBRO:' + ratios[index].text)
 
         return convert(self.ratios[index])
@@ -611,7 +613,7 @@ class Estados:
         if self.g < 10:
             return 12.5
         # empresas intermedias
-        elif self.g < 15: 
+        elif self.g < 15:
             return 18
         # empresas de crecimiento
         elif self.g >= 15:
@@ -630,13 +632,13 @@ class Estados:
         return self.balances
 
 
-    def get_ROE(self):          
+    def get_ROE(self):
         if round(self.ROE, 2) > 15.0:
-            print(Fore.GREEN + str(self.ROE))  
+            print(Fore.GREEN + str(self.ROE))
         else:
             print(Fore.RED + str(self.ROE))
         print(Style.RESET_ALL)
-    
+
 
     def get_precio_actual(self):
         return self.precio_actual
@@ -653,7 +655,7 @@ class Estados:
     def get_precio_valor_contable(self):
         return self.precio_valor_contable
 
-  
+
     def get_tasa_reparto(self):
         return self.tasa_reparto
 
@@ -672,21 +674,21 @@ class Estados:
 
     def get_per(self):
         return round(self.per, 2)
-  
+
 
     """
-      El valor del índice PEG de 1 representa una correlación perfecta entre el valor de mercado de la empresa 
-      y el crecimiento de sus ganancias proyectado. Los índices de PEG superiores a 1,0 generalmente se consideran 
+      El valor del índice PEG de 1 representa una correlación perfecta entre el valor de mercado de la empresa
+      y el crecimiento de sus ganancias proyectado. Los índices de PEG superiores a 1,0 generalmente se consideran
       desfavorables, lo que sugiere que una acción está sobrevaluada. Por el contrario, los ratios son más bajos
       superiores a 1,0 se consideran mejores, lo que indica que una acción está infravalorada.
     """
     def get_peg(self):
         if self.g > 0:
             return round(self.per / self.g, 2)
-        else: 
+        else:
             print('el crecimiento debe ser mayor a cero')
             return 0
-   
+
 
     def get_stock_name(self):
         return self.stock_name
@@ -696,10 +698,10 @@ class Estados:
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser(prog="stocks.py", epilog="Fundamental Analisis Script", usage="stocks.py [options] -n <STOCK-NAME>", prefix_chars='-', add_help=True)
-  
+
     parser.add_argument('-n', action='store', metavar='stock-name', type=str, help='Stock Name.\tExample: AAPL', required=True)
     parser.add_argument('-v', action='version', version='alpha - v1.0', help='Prints the version of stocks.py')
-    
+
     args = parser.parse_args()
 
     b = Estados(args.n, 'Annual', 5)
@@ -707,7 +709,7 @@ if __name__=="__main__":
     # --------------------------------------------------------------------------------------------------------------------
     # a) Balance  (fotografía de la empresa)
 
-    """    
+    """
         Criterios a cumplir en los balances anuales:
 
            1) capital de trabajo > 0
@@ -836,7 +838,7 @@ if __name__=="__main__":
     # --------------------------------------------------------------------------------------------------------------------
     # b) Estado Resultado  (reporte en un periodo determinado de tiempo respecto ingresos y egresos)
 
-    """    
+    """
         Criterios a cumplir en el estado resultado:
 
            1) ingresos crecientes
@@ -846,7 +848,7 @@ if __name__=="__main__":
            5) EPS creciente
            6) ROE > 15 %
 
- 
+
     """
 
     print('total ingresos:')
@@ -950,7 +952,7 @@ if __name__=="__main__":
     # --------------------------------------------------------------------------------------------------------------------
     # c) Valorizacion de la Empresa
 
-    """    
+    """
         Pasos para tomar decision de inversion en la empresa:
 
            1) Determinar G para ver tasa de crecimiento
@@ -1015,7 +1017,7 @@ if __name__=="__main__":
     print('rentabilidad (%):')
     print(rentabilidad)
     print('')
-    
+
     if g > 0:
         print('Como g > 0 análisis casanegra :')
         b.analisis_casanegra(15)
