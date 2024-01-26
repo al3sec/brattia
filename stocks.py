@@ -28,7 +28,7 @@ empresas = {
     "NVIDIA":         [ "6497", "nvidia-corp" ],
     "MELI":           [ "16599", "mercadolibre" ],
     "ENELCHILE":      [ "976489", "enersis-chile-sa" ],
-    "OXIQUIM":        [ "1036886", "oxiquim" ], # Se ve buena
+    "OXIQUIM":        [ "1036886", "oxiquim" ], 
     "ENELAM":         [ "41445", "enersis" ],
     "SMU":            [ "1055339", "smu" ],
     "MASISA":         [ "41468", "masisa" ],
