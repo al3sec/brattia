@@ -28,7 +28,7 @@ empresas = {
     "NVIDIA":         [ "6497", "nvidia-corp" ],
     "MELI":           [ "16599", "mercadolibre" ],
     "ENELCHILE":      [ "976489", "enersis-chile-sa" ],
-    "OXIQUIM":        [ "1036886", "oxiquim" ], 
+    "OXIQUIM":        [ "1036886", "oxiquim" ],
     "ENELAM":         [ "41445", "enersis" ],
     "SMU":            [ "1055339", "smu" ],
     "MASISA":         [ "41468", "masisa" ],
@@ -514,8 +514,24 @@ class Estados:
 
 
     def set_eps_presente(self):
-        eps_s = self.total_beneficio_por_accion()
-        return eps_s[0]
+        url= 'https://es.investing.com/equities/' + self.slug
+        try:
+            result = httpx.get(url)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            elements = soup.find_all('span')
+            index = 0
+
+            for i, a in enumerate(elements):
+                #print(str(i) + ':' + a.text)
+                if a.text == 'BPA':
+                    index = i + 1
+                    break
+
+            eps = elements[index].text.replace('.', '').replace(',', '.')
+            print(str(eps))
+            return float(eps)
+        except:
+            print("una excepcion ocurrio al intentar leer el EPS presente")
 
 
     # promedio a 5 años
@@ -523,10 +539,11 @@ class Estados:
         eps_s = self.total_beneficio_por_accion()
         return np.mean(eps_s)
 
-
+    # usando eps presente
     def set_eps_futuro(self, n):
-        epsPromedio = self.eps_promedio
-        return epsPromedio * (1 + (self.g / 100)) ** n
+        print('eps_presente: '+ str(self.eps_presente))
+        print('g: '+ str(self.g))
+        return  self.eps_presente * (1 + (self.g / 100)) ** n
 
 
     def set_precio_accion_futuro(self):
@@ -670,6 +687,9 @@ class Estados:
 
     def get_eps_promedio(self):
         return round(self.eps_promedio,2)
+
+    def get_eps_presente(self):
+        return round(self.eps_presente,2)
 
 
     def get_per(self):
@@ -989,6 +1009,12 @@ if __name__=="__main__":
 
     print('epsFuturo:')
     print(epsFuturo)
+    print('')
+
+    epsPresente = b.get_eps_presente()
+
+    print('epsPresente:')
+    print(epsPresente)
     print('')
 
     epsPromedio = b.get_eps_promedio()
