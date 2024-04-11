@@ -3,11 +3,14 @@
 # El objetivo de este script es utilizar investing.com para realizar el analisis fundamental de una empresa.
 
 import httpx
+import requests
+import json
 import numpy as np
 import argparse
 from bs4 import BeautifulSoup
 from colorama import Fore, Back, Style
 import matplotlib.pyplot as plt
+from datetime import date
 
 
 """
@@ -77,7 +80,6 @@ empresas = {
     "ECL":            [ "41438", "ecl-sa"],
 }
 
-
 # funciones auxiliares
 def get_slug(nombre):
     return empresas[nombre][1]
@@ -91,16 +93,21 @@ def special_print(word, color):
     print(Fore.GREEN + word) if color == 'GREEN' else  print(Fore.RED + word)
     print(Style.RESET_ALL)
 
+
 def print_bool_result(condition):
     special_print('Si', 'GREEN') if condition  else special_print('No', 'RED')
 
 
 def convert(balances):
+    # print(balances)
     strNumber = balances.text.replace(",", ".").strip('%')
-    if strNumber != '-':
-        return float(strNumber)
+    result = float(0)
+    try:
+        result = float(strNumber)
+    except ValueError:
+        pass
 
-    return float(0)
+    return result
 
 
 def get_annual_data(balances, a,b,c,d):
@@ -192,7 +199,7 @@ class Estados:
         return 0
 
 
-    # ultimo precio de la accion
+    # ultimo precio de la accion (ultimo precio de cierre)
     def set_precio_actual(self):
         url= 'https://es.investing.com/equities/' + self.slug
         try:
@@ -200,20 +207,33 @@ class Estados:
             soup = BeautifulSoup(result.content, 'html.parser')
             elements = soup.find_all('span')
             index = 0
-
             for i, a in enumerate(elements):
-            # print(str(i) + ':' + a.text)
-                if a.text == 'Resumen':
+                # print(str(i) + ':' + a.text)
+                if a.text == 'Último cierre':
                     index = i + 1
                     break
 
             precio = elements[index].text.replace('.', '').replace(',', '.')
-            # print(str(precio))
+            print(str(precio))
             return float(precio)
 
         except:
             print("una excepcion ocurrio al intentar leer el precio actual")
 
+    def set_eps_presente(self):
+        try:
+            url = "https://www.bolsadesantiago.com:443/api/RV_Instrumentos/getRazonesFinancieras"
+            cookies = {"f5avraaaaaaaaaaaaaaaa_session_": "KOCJLNMPEKADJKFMOACMGBFKAGEPDLKDKPICKGLLONEBGKJLDAOLBJLEEPOLJLLDKLIDDJMIFIMKLJPHHBEACAJCBFAMBJPLPADKGOFEMKFCEODHMNIOGDDLDBGNNBIA", "__uzma": "2e55a4c4-edf7-47e3-bf44-132971d02b14", "__uzmb": "1712783997", "__uzme": "1588", "__uzmc": "3389815783307", "__uzmd": "1712806016", "gb-wbchtbt-uid": "1712784005666", "_csrf": "GEBGUKzB_IHm7-6V_5w_jNtl", "_ga": "GA1.2.1981571046.1712784007", "_gid": "GA1.2.674991874.1712784007", "_ga_Y647MRPM4Z": "GS1.2.1712805991.3.1.1712805991.60.0.0", "__gads": "ID=cad4a9546dad64cb:T=1712784012:RT=1712805983:S=ALNI_MaUktTczhSHoJGS2gRkceCo_7Cj3w", "__gpi": "UID=00000a1bcee3b07b:T=1712784012:RT=1712805983:S=ALNI_MZALrNNF6GkoMrZkzLQhutpDJX4OA", "__eoi": "ID=428dab9e8a7566f8:T=1712784012:RT=1712805983:S=AA-Afjb-MMmAJherJbZRQjv9PRNu", "BIGipServerPool-Push_HTML5_corporativa": "684715681.20480.0000", "BIGipServerPool-www.bolsadesantiago.com-HTML5_corporativa": "718270113.20480.0000", "FCNEC": "%5B%5B%22AKsRol_DlVkNSpdxhMAeR4p1ha_RfGHy3skOSDd2kUCRoIwX3fK2XRvx0cFC_8Euo-n4UK27ayGB5dBFSZ9B61ULHs6ch6sIQgAFUeBcRVRiGreDkhRYqWb1ZABOdDMJ3ZH-5EtvaT3y9f1CSbk-G6GFoNWTGU8CvA%3D%3D%22%5D%5D", "_oauth2_proxy_csrf": "gBTdOJQjqpWcLOdWS9B9CN2C1O52uiOmYmhRaxUvW8Rwb7nKfohbTSUfpA8y15xjfGAUdnxAIipM3KGypnrRyyBzn2yoqCcdatz0azJzUmpeytt52hWF6io=|1712805978|q45Ny1dpkMbKiHctitX2oL9V_P0J4R3AqII7vi-wLvc=", "_gat": "1"}
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/113.0", "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate", "Content-Type": "application/json;charset=utf-8", "X-Csrf-Token": "9Q0uqssK-1ews3xi41eCf2XMXKZtxB7OMfwg", "Origin": "https://www.bolsadesantiago.com", "Referer": "https://www.bolsadesantiago.com/resumen_instrumento/ZOFRI", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-origin", "Te": "trailers"}
+            data={"ajusteipc": 0, "fecajuste": "", "fecbal": "2024-04-10", "nemo": self.stock_name, "tipobal": "I"}
+            result = requests.post(url, headers=headers, cookies=cookies, json=data)
+            json_string = result.text
+            json_loaded = json.loads(json_string)
+            eps = json_loaded["listaResult"][1]['VALOR01']
+            # print(eps)
+            return float(eps)
+        except:
+            print("una excepcion ocurrio al intentar leer el EPS presente")
 
      # lista con los ultimos 4 años de activo circulante
     def total_activo_circulante(self):
@@ -252,6 +272,7 @@ class Estados:
 
     def total_costo_venta(self):
         return get_annual_data(self.resultados, 27, 28, 29, 30)
+
 
 
     def total_resultado_explotacion(self):
@@ -513,27 +534,6 @@ class Estados:
         return round(self.ROE * (1 - (self.tasa_reparto / 100)), 2)
 
 
-    def set_eps_presente(self):
-        url= 'https://es.investing.com/equities/' + self.slug
-        try:
-            result = httpx.get(url)
-            soup = BeautifulSoup(result.content, 'html.parser')
-            elements = soup.find_all('span')
-            index = 0
-
-            for i, a in enumerate(elements):
-                #print(str(i) + ':' + a.text)
-                if a.text == 'BPA':
-                    index = i + 1
-                    break
-
-            eps = elements[index].text.replace('.', '').replace(',', '.')
-            print(str(eps))
-            return float(eps)
-        except:
-            print("una excepcion ocurrio al intentar leer el EPS presente")
-
-
     # promedio a 5 años
     def set_eps_promedio(self):
         eps_s = self.total_beneficio_por_accion()
@@ -541,8 +541,6 @@ class Estados:
 
     # usando eps presente
     def set_eps_futuro(self, n):
-        print('eps_presente: '+ str(self.eps_presente))
-        print('g: '+ str(self.g))
         return  self.eps_presente * (1 + (self.g / 100)) ** n
 
 
@@ -623,6 +621,24 @@ class Estados:
         epsMean = np.mean(self.total_beneficio_por_accion())
         return round(100 * (epsMean /  self.precio_actual), 2)
 
+    def graham_ratio(self):
+       return self.per * self.precio_valor_contable
+
+    def criterio_multiplos_cruzados(self):
+       graham =  round(self.graham_ratio(),2)
+       print('graham: '+ str(graham))
+
+       if self.ROE <= 10 and graham <= 10:
+           print('comprar la acción, graham menor a 10')
+       elif self.ROE > 10 and self.ROE <= 15  and graham <= 15:
+           print('comprar la acción, graham menor a 15')
+       elif self.ROE > 15 and graham <= 22.5:
+           print('comprar la acción, graham menor a 22.5')
+       else:
+           print('no comprar, la acción sigue cara')
+
+       print('--------------------------------')
+       print('')
 
     # multiplo de per (g en %)
     def get_multiplo_per(self):
@@ -691,7 +707,7 @@ class Estados:
     def get_eps_presente(self):
         return round(self.eps_presente,2)
 
-
+    # acciones dividenderas en chile entre 7 y 12 PER es normal.
     def get_per(self):
         return round(self.per, 2)
 
@@ -1048,6 +1064,8 @@ if __name__=="__main__":
         print('Como g > 0 análisis casanegra :')
         b.analisis_casanegra(15)
 
+    print('Criterio de multiplos cruzados:')
+    b.criterio_multiplos_cruzados()
 
     print('valor bolsa/libro:')
     bolsaLibro = b.get_precio_valor_contable()
@@ -1113,5 +1131,9 @@ if __name__=="__main__":
     print('Gráfico amigo:')
     b.grafico_amigo()
 
+    #agregar multiplos cruzados (PER * B/L)
+    # ROE mayor a  15%, maximo PER  sobre 22.5 es caro
+
+
     # --------------------------------------------------------------------------------------------------------------------
-    # d) Futurologia? (necesitamos variables cuantitativas o chatgpt)
+    # d) Futurologia?
